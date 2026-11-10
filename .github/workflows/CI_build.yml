@@ -88,8 +88,66 @@ jobs:
            cd ..\UrlDetection
            .\verifyUrlDetection.ps1
 
-    - name: Archive artifacts
+    - name: Stage portable package (Release)
+      if: matrix.build_configuration == 'Release'
+      shell: pwsh
+      run: |
+           $ErrorActionPreference = 'Stop'
+           $root  = $env:GITHUB_WORKSPACE
+           $stage = Join-Path $root 'portable'
+
+           if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
+           New-Item -ItemType Directory -Path $stage | Out-Null
+
+           # Main executable (the XP build we just produced and verified).
+           Copy-Item (Join-Path $root $env:NPP_BIN) -Destination (Join-Path $stage 'notepad++.exe')
+
+           # Resource directories. Sources live under PowerEditor\installer, except
+           # userDefineLangs which ships preinstalled under PowerEditor\bin.
+           # NOTE: plugins/ and updater/ are intentionally NOT bundled: they are
+           # prebuilt binaries (plugin DLLs + GUP.exe) that are not XP-verified and
+           # auto-update is meaningless on XP (disableNppAutoUpdate.xml is included).
+           Copy-Item "PowerEditor\installer\APIs"            -Destination (Join-Path $stage 'autoCompletion') -Recurse
+           Copy-Item "PowerEditor\installer\functionList"    -Destination (Join-Path $stage 'functionList')   -Recurse
+           Copy-Item "PowerEditor\installer\nativeLang"      -Destination (Join-Path $stage 'localization')   -Recurse
+           Copy-Item "PowerEditor\installer\themes"          -Destination (Join-Path $stage 'themes')         -Recurse
+           Copy-Item "PowerEditor\bin\userDefineLangs"       -Destination (Join-Path $stage 'userDefineLangs')-Recurse
+
+           # Root-level files. Use the src/ model XMLs (newest); bin/ copies are stale.
+           Copy-Item "PowerEditor\src\langs.model.xml"               -Destination $stage
+           Copy-Item "PowerEditor\src\stylers.model.xml"             -Destination $stage
+           Copy-Item "PowerEditor\src\tabContextMenu_example.xml"    -Destination $stage
+           Copy-Item "PowerEditor\src\toolbarButtonsConf_example.xml"-Destination $stage
+           Copy-Item "PowerEditor\bin\change.log"                    -Destination $stage
+           Copy-Item "PowerEditor\bin\readme.txt"                    -Destination $stage
+           Copy-Item "PowerEditor\installer\xml4Config\doLocalConf.xml"            -Destination $stage
+           Copy-Item "PowerEditor\installer\xml4Config\disableNppAutoUpdate.xml"  -Destination $stage
+           Copy-Item "LICENSE" -Destination (Join-Path $stage 'license.txt')
+
+           Write-Output "===== staged portable tree ====="
+           Get-ChildItem $stage | Select-Object Name, Mode | Format-Table -AutoSize | Out-String -Width 120 | Write-Output
+
+           # Zip it with the Windows-built-in bsdtar (tar.exe). Faster and more
+           # reliable than Compress-Archive for this many small XML files, and no
+           # third-party 7z dependency on the runner.
+           $zip = Join-Path $root "NotepadPP.XP.Win32.portable.zip"
+           if (Test-Path $zip) { Remove-Item -Force $zip }
+           Push-Location $stage
+           & tar.exe -a -cf $zip .
+           Pop-Location
+           if ($LASTEXITCODE -ne 0) { throw "tar.exe failed to create the portable zip" }
+           "PORTABLE_ZIP=$zip" >> $env:GITHUB_ENV
+           Write-Output "portable zip: $((Get-Item $zip).Length) bytes"
+
+    - name: Archive binary artifact
       uses: actions/upload-artifact@v7
       with:
           name: Notepad++.XP.${{ matrix.build_platform}}.${{ matrix.build_configuration}}
-          path: PowerEditor\bin\Notepad++.exe
+          path: ${{ env.NPP_BIN }}
+
+    - name: Archive portable package (Release)
+      if: matrix.build_configuration == 'Release'
+      uses: actions/upload-artifact@v7
+      with:
+          name: NotepadPP.XP.Win32.portable
+          path: ${{ env.PORTABLE_ZIP }}
