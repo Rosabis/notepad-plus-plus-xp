@@ -199,6 +199,7 @@ LanguageNameInfo ScintillaEditView::_langNameInfoArray[L_EXTERNAL + 1] = {
 	{L"sas",              L"SAS",                    L"SAS file",                                          L_SAS,             "sas"},
 	{L"errorlist",        L"ErrorList",              L"ErrorList file",                                    L_ERRORLIST,       "errorlist"},
 	{L"escseq",           L"EscapeSequence (ANSI)",  L"Escape Sequence (ANSI) file",                       L_ESCSEQ,          "escseq"},
+	{L"fcST",             L"Structured Text",         L"IEC 61131-3 Structured Text file",                  L_STTXT,           "fcST"},
 	{L"ext",              L"External",               L"External",                                          L_EXTERNAL,        "null"}
 };
 
@@ -2138,6 +2139,9 @@ void ScintillaEditView::defineDocType(LangType typeDoc)
 		case L_ESCSEQ:
 			setEscSeqLexer(); break;
 
+		case L_STTXT:
+			setSTTXTLexer(); break;
+
 		case L_TEXT :
 		default :
 			if (typeDoc >= L_EXTERNAL && typeDoc < NppParameters::getInstance().L_END)
@@ -2316,8 +2320,13 @@ void ScintillaEditView::restyleBuffer()
 
 void ScintillaEditView::styleChange()
 {
+	// SCI_CLEARDOCUMENTSTYLE resets wrapped line heights: keep the same document line on top
+	const intptr_t firstVisibleDocLine = execute(SCI_DOCLINEFROMVISIBLE, execute(SCI_GETFIRSTVISIBLELINE));
+
 	defineDocType(_currentBuffer->getLangType());
 	restyleBuffer();
+
+	execute(SCI_SETFIRSTVISIBLELINE, execute(SCI_VISIBLEFROMDOCLINE, firstVisibleDocLine));
 }
 
 bool ScintillaEditView::setLexerFromLangID(int langID) const // Internal lexer only
@@ -3370,6 +3379,18 @@ void ScintillaEditView::performGlobalStyles()
 		npcCustomColor = pStyle->_fgColor;
 	}
 	setNpcAndCcUniEOL(npcCustomColor);
+}
+
+void ScintillaEditView::setWhitespaceSize() const
+{
+	if (isShownSpaceAndTab())
+	{
+		const auto zoom = static_cast<int>(execute(SCI_GETZOOM)) / 2;
+		const auto zoomSize = std::max<int>(3, DPIManagerV2::scale(2, _hParent) + zoom);
+		const auto whitespaceSize = std::max<int>(2, (zoomSize + 1) / 2);
+
+		execute(SCI_SETWHITESPACESIZE, whitespaceSize, 0);
+	}
 }
 
 void ScintillaEditView::showNpc(bool willBeShown, bool isSearchResult)
@@ -4917,8 +4938,7 @@ bool ScintillaEditView::pasteToMultiSelection() const
 		{
 			LRESULT posStart = execute(SCI_GETSELECTIONNSTART, i);
 			LRESULT posEnd = execute(SCI_GETSELECTIONNEND, i);
-			replaceTarget(clipboardStrings[i].c_str(), posStart, posEnd);
-			posStart += clipboardStrings[i].length();
+			posStart += replaceTarget(clipboardStrings[i].c_str(), posStart, posEnd);
 			execute(SCI_SETSELECTIONNSTART, i, posStart);
 			execute(SCI_SETSELECTIONNEND, i, posStart);
 		}
@@ -4947,8 +4967,7 @@ bool ScintillaEditView::pasteToMultiSelection() const
 			// remove the latest added EOL
 			severalStr.erase(severalStr.length() - eolStr.length());
 
-			replaceTarget(severalStr.c_str(), posStart, posEnd);
-			posStart += severalStr.length();
+			posStart += replaceTarget(severalStr.c_str(), posStart, posEnd);
 			execute(SCI_SETSELECTIONNSTART, i, posStart);
 			execute(SCI_SETSELECTIONNEND, i, posStart);
 		}

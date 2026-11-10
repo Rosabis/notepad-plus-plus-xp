@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!--
 	Croatian localization for Notepad++
-	Updated: August 10, 2026 by Elvis Gambiraža (el.gambo@gmail.com)
+	Updated: October 21, 2026 by Elvis Gambiraža (el.gambo@gmail.com)
 	All the comments are for explanation, they are not for translation.
 -->
 <NotepadPlus>
-	<Native-Langue name="Hrvatski" filename="croatian.xml" version="8.9.7">
+	<Native-Langue name="Hrvatski" filename="croatian.xml" version="8.9.8">
 		<Menu>
 			<Main>
 				<!-- Main Menu Entries -->
@@ -978,12 +978,15 @@
 			<Preference title="Postavke">
 				<Item id="6001" name="Zatvori"/>
 				<Global title="Općenito">
-					<Item id="6123" name="Lokalizacija:"/>
+					<Item id="6123" name="&amp;Lokalizacija"/>
 					<Item id="6131" name="Glavni izbornik"/>
-					<Item id="6122" name="Sakrij (za prikaz koristite Alt ili F10)"/>
-					<Item id="6132" name="Sakrij prečace ＋ ▼ ✕ s desne strane"/>
+					<Item id="6122" name="&amp;Sakrij (za prikaz koristite Alt ili F10)"/>
+					<Item id="6132" name="Sakrij &amp;prečace ＋ ▼ ✕ s desne strane"/>
 					<Item id="6133" name="Statusna vrpca"/>
-					<Item id="6134" name="Sakrij"/>
+					<Item id="6134" name="Sa&amp;krij"/>
+					<Item id="7165" name="Font u dijalozima (potreban je restart Notepada++)"/>
+					<Item id="7166" name="&amp;Veličina:"/>
+					<Item id="7168" name="Naziv:"/>
 				</Global>
 
 				<Toolbar title="Alatna vrpca">
@@ -1241,8 +1244,6 @@ umjesto brisanja jednog razmaka"/>
 				<Searching title="Pretraživanje">
 					<Item id="6902" name="Koristi font fiksne širine u dijalogu pretraživanja (potreban je restart Notepada++)"/>
 					<Item id="6903" name="Dijalog pretraživanja ostaje otvoren nakon pretraživanja koje otvara prozor s rezultatima"/>
-					<Item id="6904" name="Traži potvrdu za Zamijeni sve u svim otvorenim dokumentima"/>
-					<Item id="6905" name="Pri zamjeni ne prelazi na sljedeće pojavljivanje"/>
 					<Item id="6906" name="U prozoru rezultata pretraživanja prikaži samo jedan redak s rezultatima u tom retku (ako stanu u redak)"/>
 					<Item id="6907" name="Kad se pozove dijaloški okvir za pretraživanje"/>
 					<Item id="6908" name="Ispunite polje za pretraživanje označenim tekstom"/>
@@ -1376,7 +1377,7 @@ umjesto brisanja jednog razmaka"/>
 
 				<MISC title="Razno">
 					<ComboBox id="6347">
-						<Element name="Omogući za aktivnu datoteku"/>
+						<Element name="Omogući za aktivne datoteke"/>
 						<Element name="Omogući za sve otvorene datoteke"/>
 						<Element name="Isključi"/>
 					</ComboBox>
@@ -1416,6 +1417,7 @@ umjesto brisanja jednog razmaka"/>
 					<Item id="6346" name="Pogled na mapu dokumenta"/>
 					<Item id="6360" name="Isključi sve zvukove"/>
 					<Item id="6361" name="Omogući dijalog za potvrdu spremanja svih datoteka"/>
+					<Item id="6366" name="Dopusti učitavanje symlinkova u panelu Mapa kao radni prostor"/>
 				</MISC>
 			</Preference>
 			<MultiMacro title="Makro pokrenuti više puta">
@@ -1483,19 +1485,18 @@ Ovaj dijalog možete kasnije ponovo aktivirati u Postavkama."/>
 				<Item id="7" name="&amp;Ne"/>
 				<Item id="4" name="&amp;Uvijek da"/>
 			</DoSaveAll><!-- HowToReproduce: Check the "Enable Save All confirm dialog" checkbox in Preference->MISC, now click "Save all" -->
-			<NetworkPathWarning title="Učitavanje sesije Notepad++" title2="Klikabilna datoteka:// link">
+			<NetworkPathWarning title="Učitavanje sesije Notepad++" title2="Klikabilna datoteka:// link" title3="Učitavanje toolbarButtonsConf.xml" title4="Učitavanje XML datoteke projektnog panela">
 				<Item id="1771" name="Upozorenje o mrežnoj putanji:
 
 $STR_REPLACE$
 
-Učitavanje će uzrokovati automatsku autentifikaciju sustava Windows na tom poslužitelju, što potencijalno otkriva vaše podatke za prijavu u sustav Windows.
+Učitavanje ove datoteke će uzrokovati automatsku autentifikaciju sustava Windows na njenom poslužitelju, što potencijalno otkriva vaše podatke za prijavu u sustav Windows.
 Učitaj svejedno?"/>
 				<Item id="2" name="&amp;Preskoči"/>
-				<Item id="6" name="&amp;Učitaj"/>
+				<Item id="6" name="&amp;Uvijek učitaj s ovog servera"/>
 				<Item id="7" name="Uvijek p&amp;reskoči mrežnu putanju"/>
 				<Item id="4" name="Uvijek u&amp;čitaj mrežnu putanju"/>
 			</NetworkPathWarning>
-
 			<DebugInfo title="Debug informacije">
 				<Item id="1752" name="&amp;Kopiraj podatke u međuspremnik"/>
 				<Item id="1" name="U redu"/>
@@ -1661,6 +1662,9 @@ Iz sigurnosnih razloga, provjerit će se integritet datoteke shortcuts.xml. Kako
 			<ShortcutsXmlTampered title="Sigurnosno upozorenje" message="Čini se da je datoteka shortcuts.xml ručno izmijenjena.
 
 Iz sigurnosnih razloga, pregledajte otvorenu datoteku shortcuts.xml. Ako je sadržaj datoteke u redu, upotrijebite &quot;Validiraj shortcuts.xml&quot; iz izbornika &quot;Pokretanje&quot; kako biste to potvrdili."/>
+			<SymlinkLoadingWarning title="Upozorenje: Učitavanje simlinka može uzrokovati zamrzavanje" message="Omogućavanje učitavanja symlinka u Mapi kao radnom prostoru može uzrokovati da Notepad++ uđe u beskonačnu petlju i zamrzne.
+To se može dogoditi kada se simlinkovi direktorija razriješe u nadređene mape ili formiraju kružne reference.
+Nastavite samo ako razumijete rizik."/>
 		</MessageBox>
 		<ClipboardHistory>
 			<PanelTitle name="Povijest međuspremnika"/>
@@ -1786,6 +1790,8 @@ Iz sigurnosnih razloga, pregledajte otvorenu datoteku shortcuts.xml. Ako je sadr
 			<default-open-save-select-folder value="Odaberite zadanu mapu"/><!-- HowToReproduce: Settings > Preferences > Default Directory > [...] -->
 			<shift-change-direction-tip value="Upotrijebite Shift + Enter za pretraživanje u suprotnom smjeru."/>
 			<two-find-buttons-tip value="Dva gumba za pretraživanje"/>
+			<confirm-replace-in-all-open-docs-tip value="Potvrdi &quot;Zamijeni sve u svim otvorenim dokumentima&quot; action"/>
+			<replace-and-stop-tip value="Nakon zamjene, ne idi na sljedeće podudaranje"/>
 			<find-in-files-filter-tip value="Nađi u datotekama cpp, cxx, h, hxx i hpp:
 *.cpp *.cxx *.h *.hxx *.hpp
 
@@ -1823,6 +1829,7 @@ Nađi u svim datotekama s izuzetkom svih mapa log ili logs rekurzivno:
 			<find-status-replace-readonly value="Zamijeni: Ne mogu zamijeniti tekst. Trenutni dokument je samo za čitanje"/>
 			<find-status-cannot-find value="Pronađi: Ne mogu pronaći tekst &quot;$STR_REPLACE$&quot;"/>
 			<find-status-cannot-find-pebkac-maybe value="Navedeno pojavljivanje nije moguće pronaći. Možda ste zaboravili označiti &quot;Na kraju opet od početka&quot; (na UKLJUČENO), &quot;Razlikuj velika i mala slova&quot; (na ISKLJUČENO), ili &quot;Traži samo cijele riječi&quot; (na ISKLJUČENO)."/>
+			<find-status-regex-find-empty-string value="Zadani regularni izraz podudara se s praznim nizovima."/>
 			<find-status-scope-selection value="u odabranom tekstu"/>
 			<find-status-scope-all value="u cijeloj datoteci"/>
 			<find-status-scope-backward value="od početka datoteke do kursora"/>
@@ -1961,6 +1968,9 @@ Ako odaberete napredni način, ali ne uređujete datoteke na gore navedenim jezi
 			<max-len-on-save-tip value="Vaš unos je vrlo dugačak i neće biti spremljen za sljedeću sesiju."/>
 			<goto-setting-tip value="Pronađite svoju postavku ovdje"/>
 			<tabbar-tabcompactlabellen-tip value="Ograničava vidljivu duljinu dugih naziva na jezičcima kartica. Pritisnite Enter za primjenu zadane vrijednosti. Raspon vrijednosti: 1-257 znakova (0 onemogućuje skraćivanje)."/>
+			<networkpathwarning-serverwhitelist-tip value="Upisuje poslužitelj trenutne datoteke u Notepad++ serverWhiteList.xml.
+
+Za više informacija, kliknite ovaj gumb kako biste otvorili web stranicu s odgovarajućim dijelom korisničkog priručnika."/>
 		</MiscStrings>
 	</Native-Langue>
 </NotepadPlus>

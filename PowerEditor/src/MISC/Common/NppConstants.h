@@ -46,6 +46,7 @@ inline constexpr int NPP_CP_BIG5 = 950;
 
 #define IDT_HIDE_TOOLTIP 1001
 
+#define NPP_UAC_OP_PREFIX L"#UAC-"
 #define NPP_UAC_SAVE_SIGN L"#UAC-SAVE#"
 #define NPP_UAC_SETFILEATTRIBUTES_SIGN L"#UAC-SETFILEATTRIBUTES#"
 #define NPP_UAC_MOVEFILE_SIGN L"#UAC-MOVEFILE#"
@@ -189,11 +190,11 @@ enum UniMode
 
 enum ChangeDetect
 {
-	cdDisabled      = 0x00,
-	cdEnabledOld    = 0x01,
-	cdEnabledNew    = 0x02,
-	cdAutoUpdate    = 0x04,
-	cdGo2end        = 0x08
+	cdDisabled               = 0x00,
+	cdEnabled4AllFiles       = 0x01,
+	cdEnabled4CurrentFile    = 0x02,
+	cdAutoUpdate             = 0x04,
+	cdGo2end                 = 0x08
 };
 
 enum BackupFeature

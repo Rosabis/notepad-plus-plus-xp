@@ -408,26 +408,28 @@ public:
 		showMargin(ScintillaEditView::_SC_MARGE_FOLDER, display);
 	}
 
-	void setWrapMode(lineWrapMethod meth) {
+	void setWrapMode(lineWrapMethod meth) const {
 		int mode = (meth == LINEWRAP_ALIGNED)?SC_WRAPINDENT_SAME:\
 				(meth == LINEWRAP_INDENT)?SC_WRAPINDENT_INDENT:SC_WRAPINDENT_FIXED;
 		execute(SCI_SETWRAPINDENTMODE, mode);
 	}
 
-	void showWSAndTab(bool willBeShowed = true) {
-		execute(SCI_SETVIEWWS, willBeShowed?SCWS_VISIBLEALWAYS:SCWS_INVISIBLE);
-		execute(SCI_SETWHITESPACESIZE, 2, 0);
+	void setWhitespaceSize() const;
+
+	void showWSAndTab(bool willBeShowed = true) const {
+		execute(SCI_SETVIEWWS, willBeShowed ? SCWS_VISIBLEALWAYS : SCWS_INVISIBLE);
+		setWhitespaceSize();
 	}
 
-	bool isShownSpaceAndTab() {
+	bool isShownSpaceAndTab() const {
 		return (execute(SCI_GETVIEWWS) != 0);
 	}
 
-	void showEOL(bool willBeShowed = true) {
+	void showEOL(bool willBeShowed = true) const {
 		execute(SCI_SETVIEWEOL, willBeShowed);
 	}
 
-	bool isShownEol() {
+	bool isShownEol() const {
 		return (execute(SCI_GETVIEWEOL) != 0);
 	}
 
@@ -939,6 +941,7 @@ protected:
 	}
 	void setRLexer() {
 		setLexer(L_R, LIST_0 | LIST_1 | LIST_2);
+		execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("lexer.r.escape.sequence"), reinterpret_cast<LPARAM>("1"));
 	}
 
 	void setCoffeeScriptLexer() {
@@ -1072,6 +1075,14 @@ protected:
 
 	void setSasLexer(){
 		setLexer(L_SAS, LIST_0 | LIST_1 | LIST_2 | LIST_3);
+	}
+
+	void setSTTXTLexer() {
+		setLexer(L_STTXT, LIST_0 | LIST_1 | LIST_2 | LIST_3 | LIST_4 | LIST_5);
+		execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold"), reinterpret_cast<LPARAM>("1"));
+		execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.compact"), reinterpret_cast<LPARAM>("0"));
+		execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.comment"), reinterpret_cast<LPARAM>("1"));
+		execute(SCI_SETPROPERTY, reinterpret_cast<WPARAM>("fold.preprocessor"), reinterpret_cast<LPARAM>("1"));
 	}
 
 	void setErrorListLexer() {

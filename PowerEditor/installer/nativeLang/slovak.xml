@@ -3,7 +3,7 @@
 	Slovak localization for Notepad++
 -->
 <NotepadPlus>
-	<Native-Langue name="Slovenčina" filename="slovak.xml" version="8.9.7">
+	<Native-Langue name="Slovenčina" filename="slovak.xml" version="8.9.8">
 		<Menu>
 			<Main>
 				<!-- Main Menu Entries -->
@@ -966,12 +966,15 @@
 			<Preference title="Predvoľby">
 				<Item id="6001" name="Zavrieť"/>
 				<Global title="Všeobecné">
-					<Item id="6123" name="Jazyk"/>
+					<Item id="6123" name="&amp;Jazyk"/>
 					<Item id="6131" name="Ponuka"/>
-					<Item id="6122" name="Skryť (prepínanie klávesom Alt alebo F10)"/>
-					<Item id="6132" name="Skryť ovládacie prvky ＋ ▼ ✕"/>
+					<Item id="6122" name="&amp;Skryť (prepínanie klávesom Alt alebo F10)"/>
+					<Item id="6132" name="Skryť ovládacie &amp;prvky ＋ ▼ ✕"/>
 					<Item id="6133" name="Stavový riadok"/>
-					<Item id="6134" name="Skryť"/>
+					<Item id="6134" name="Sk&amp;ryť"/>
+					<Item id="7165" name="Písmo v dialógovom okne (vyžaduje sa reštart Notepad++)"/>
+					<Item id="7166" name="Veľ&amp;kosť:"/>
+					<Item id="7168" name="Názov:"/>
 				</Global>
 
 				<Toolbar title="Panel nástrojov">
@@ -1225,10 +1228,8 @@
 				</Print>
 
 				<Searching title="Vyhľadávanie">
-					<Item id="6902" name="Použiť neproporcionálne písmo v dialógovom okne Hľadať (Vyžaduje reštart Notepad++)"/>
+					<Item id="6902" name="Použiť neproporcionálne písmo v dialógovom okne Hľadať (Vyžaduje sa reštart Notepad++)"/>
 					<Item id="6903" name="Dialógové okno Hľadať zostáva otvorené po vyhľadaní s výstupom do okna s výsledkami hľadania"/>
-					<Item id="6904" name="Potvrdiť Nahradiť všetko vo všetkých otvorených dokumentoch"/>
-					<Item id="6905" name="Nahradiť: Neprechádzať na nasledujúci výskyt"/>
 					<Item id="6906" name="Okno s výsledkami hľadania: zobraziť len jednu položku na nájdený riadok, ak je to možné"/>
 					<Item id="6907" name="Pri vyvolaní dialógového okna Hľadať"/>
 					<Item id="6908" name="Vložiť označený text do vyhľadávacieho poľa"/>
@@ -1358,7 +1359,7 @@
 
 				<MISC title="Rôzne">
 					<ComboBox id="6347">
-						<Element name="Povoliť pre aktuálny súbor"/>
+						<Element name="Povoliť pre aktuálne súbory"/>
 						<Element name="Povoliť pre všetky otvorené súbory"/>
 						<Element name="Zakázať"/>
 					</ComboBox>
@@ -1398,6 +1399,7 @@
 					<Item id="6346" name="Náhľad na mape dokumentu"/>
 					<Item id="6360" name="Stlmiť všetky zvuky"/>
 					<Item id="6361" name="Povoliť potvrdzovacie dialógové okno Uložiť všetko"/>
+					<Item id="6366" name="Povoliť načítanie symbolických odkazov v paneli Priečinok ako pracovný priestor"/>
 				</MISC>
 			</Preference>
 			<MultiMacro title="Spustiť makro viacnásobne">
@@ -1465,7 +1467,7 @@ Toto dialógové okno môžete neskôr znovu aktivovať v Predvoľbách."/>
 				<Item id="7" name="&amp;Nie"/>
 				<Item id="4" name="&amp;Vždy áno"/>
 			</DoSaveAll><!-- HowToReproduce: Check the "Enable Save All confirm dialog" checkbox in Preference->MISC, now click "Save all" -->
-			<NetworkPathWarning title="Načítava sa relácia Notepad++" title2="Klikateľný odkaz file://">
+			<NetworkPathWarning title="Načítava sa relácia Notepad++" title2="Klikateľný odkaz file://" title3="Načítava sa toolbarButtonsConf.xml" title4="Načítava sa súbor XML panela projektu">
 				<Item id="1771" name="Upozornenie na sieťovú cestu:
 
 $STR_REPLACE$
@@ -1473,7 +1475,6 @@ $STR_REPLACE$
 Jej načítaním sa systém Windows automaticky prihlási na tento server, čo môže viesť k odhaleniu vašich prihlasovacích údajov do systému Windows.
 Načítať aj tak?"/>
 				<Item id="2" name="&amp;Preskočiť"/>
-				<Item id="6" name="&amp;Načítať"/>
 				<Item id="7" name="&amp;Vždy preskočiť sieťovú cestu"/>
 				<Item id="4" name="Vždy načítať &amp;sieťovú cestu"/>
 			</NetworkPathWarning>
@@ -1641,6 +1642,9 @@ Z bezpečnostných dôvodov sa skontroluje integrita súboru shortcuts.xml. Ak c
 			<ShortcutsXmlTampered title="Bezpečnostné upozornenie" message="Zdá sa, že súbor shortcuts.xml bol upravený ručne.
 
 Z bezpečnostných dôvodov skontrolujte otvorený súbor shortcuts.xml. Ak je obsah súboru v poriadku, potvrďte to pomocou položky &quot;Overiť súbor shortcuts.xml&quot; v ponuke &quot;Spustiť&quot;."/>
+			<SymlinkLoadingWarning title="Upozornenie: Načítavanie symbolických odkazov môže spôsobiť zamrznutie systému" message="Povolenie načítavania symbolických odkazov v režime Priečinok ako pracovný priestor môže spôsobiť, že sa Notepad++zacyklí a zamrzne.
+K tomu môže dôjsť, ak sa symbolické odkazy na priečinky smerujú do nadradených priečinkov alebo vytvárajú cyklické odkazy.
+Pokračujte len vtedy, ak rozumiete rizikám."/>
 		</MessageBox>
 		<ClipboardHistory>
 			<PanelTitle name="História schránky"/>
@@ -1766,6 +1770,8 @@ Z bezpečnostných dôvodov skontrolujte otvorený súbor shortcuts.xml. Ak je o
 			<default-open-save-select-folder value="Vyberte predvolený priečinok"/><!-- HowToReproduce: Settings > Preferences > Default Directory > [...] -->
 			<shift-change-direction-tip value="Na vyhľadávanie v opačnom smere použite Shift+Enter"/>
 			<two-find-buttons-tip value="Režim dvoch tlačidiel"/>
+			<confirm-replace-in-all-open-docs-tip value="Potvrdiť akciu &quot;Nahradiť všetko vo všetkých otvorených dokumentoch&quot;"/>
+			<replace-and-stop-tip value="Po nahradení neprechádzať na nasledujúci výskyt"/>
 			<find-in-files-filter-tip value="Hľadať v cpp, cxx, h, hxx a hpp:
 *.cpp *.cxx *.h *.hxx *.hpp
 
@@ -1803,6 +1809,7 @@ Hľadať vo všetkých súboroch okrem všetkých priečinkov log alebo logs rek
 			<find-status-replace-readonly value="Nahradiť: Text nie je možné nahradiť. Aktuálny dokument je iba na čítanie"/>
 			<find-status-cannot-find value="Hľadať: Text &quot;$STR_REPLACE$&quot; sa nepodarilo nájsť"/>
 			<find-status-cannot-find-pebkac-maybe value="Uvedený výskyt sa nedá nájsť. Možno ste zabudli skontrolovať &quot;Cyklicky&quot; (začiarknuté), &quot;Rozlišovať malé/VEĽKÉ písmená&quot; (nezačiarknuté), alebo &quot;Hľadať iba celé slová&quot; (nezačiarknuté)."/>
+			<find-status-regex-find-empty-string value="Uvedený regulárny výraz zodpovedá prázdnym reťazcom."/>
 			<find-status-scope-selection value="v označenom texte"/>
 			<find-status-scope-all value="v celom súbore"/>
 			<find-status-scope-backward value="od začiatku súboru po kurzor"/>

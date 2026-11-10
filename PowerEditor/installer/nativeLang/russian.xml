@@ -4,7 +4,7 @@ Updated to :
 - added new lines
 -->
 <NotepadPlus>
-	<Native-Langue name="Русский" filename="russian.xml" version="8.9.7">
+	<Native-Langue name="Русский" filename="russian.xml" version="8.9.8">
 		<Menu>
 			<Main>
 				<!-- Главное Меню -->
@@ -1030,6 +1030,9 @@ Updated to :
 					<Item id="6132" name="Скрыть кнопки ＋ ▼ ✕ в строке меню"/>
 					<Item id="6133" name="Строка Статуса"/>
 					<Item id="6134" name="Скрыть"/>
+					<Item id="7165" name="Размер шрифта диалоговых окон (треб. перез.)"/>
+					<Item id="7166" name="Размер:"/>
+					<Item id="7168" name="Имя:"/>
 				</Global>
 				<Toolbar title="Панель Инструментов">
 					<Item id="6102" name="Скрыть"/>
@@ -1244,7 +1247,6 @@ Updated to :
 				<Searching title="Поиск">
 					<Item id="6902" name="Моноширинный шрифт в окне поиска (необходим перезапуск Notepad++)"/>
 					<Item id="6903" name="Оставлять окно Поиска открытым после окончания поиска"/>
-					<Item id="6904" name="Запрашивать подтверждение операции &quot;Заменить все во Всех Открытых Документах&quot;"/>
 					<Item id="6905" name="Замена: не переходить к следующему совпадению, только при повторном нажатии"/>
 					<Item id="6906" name="Результаты поиска: все совпадения в строке отображать одной записью если это возможно"/>
 
@@ -1344,6 +1346,7 @@ Updated to :
 					<Item id="6361" name="Запрашивать подтверждение для команды 'Сохранить Все'"/>
 					<Item id="6363" name="режим визуализации"/>
 					<Item id="6365" name="Авто-обновление:"/>
+					<Item id="6366" name="Разрешить загрузку символ. ссылок в панели Папка как Проект"/>
 				</MISC>
 				<MultiInstance title="Режим Откр. и Дата">
 					<Item id="6151" name="Режим Открытия Файлов*"/>
@@ -1510,7 +1513,7 @@ Updated to :
 				<Item id="7" name="&amp;Нет"/>
 				<Item id="4" name="&amp;Всегда Да"/>
 			</DoSaveAll>
-			<NetworkPathWarning title="Загрузка сессии Notepad++" title2="Кликабельный файл:// ссылка">>
+			<NetworkPathWarning title="Загрузка сессии Notepad++" title2="Кликабельный файл:// ссылка" title3="Загрузка toolbarButtonsConf.xml" title4="Загрузка XML-файла Панели Проекта">
 				<Item id="1771" name="Предупреждение о сетевом пути:
 
 $STR_REPLACE$
@@ -1518,7 +1521,6 @@ $STR_REPLACE$
 Загрузка приведет к автоматической аутентификации Windows на этом сервере, что потенциально может раскрыть ваши учетные данные для входа в Windows.
 Загрузить в любом случае?"/>
 				<Item id="2" name="&amp;Пропустить"/>
-				<Item id="6" name="&amp;Загрузить"/>
 				<Item id="7" name="&amp;Всегда пропускать сетевой путь"/>
 				<Item id="4" name="Всегда загружать &amp;сетевой путь"/>
 			</NetworkPathWarning>
@@ -1641,6 +1643,11 @@ $STR_REPLACE$
 			<ShortcutsXmlTampered title="Предупреждение о безопасности" message="По всей видимости, файл shortcuts.xml был изменен вручную.
 
 В целях безопасности, пожалуйста, проверьте открытый файл shortcuts.xml. Если содержимое файла в порядке, используйте пункт &quot;Утвердить shortcuts.xml&quot; в меню &quot;Запуск&quot;, чтобы это подтвердить."/>
+			<SymlinkLoadingWarning title="Внимание: Загрузка символических ссылок может привести к зависанию" message="Включение загрузки символических ссылок в папке как рабочей области может привести к бесконечному циклу и зависанию Notepad++.
+
+Это может произойти, когда символические ссылки на каталоги расширяются в родительские папки или образуют циклические ссылки.
+
+    Действуйте только в том случае, если вы понимаете все риски!"/>
 		</MessageBox>
 		<ClipboardHistory>
 			<PanelTitle name="История Буфера"/>
@@ -1763,6 +1770,7 @@ $STR_REPLACE$
 			<default-open-save-select-folder value="Выберите папку в качестве директории по умолчанию"/>
 			<shift-change-direction-tip value="Используйте Shift+Enter для поиска в обратном направлении."/>
 			<two-find-buttons-tip value="2 направления поиска"/>
+			<confirm-replace-in-all-open-docs-tip value="Подтвердите действие &quot;Заменить всё во всех открытых документах&quot;"/>
 			<find-in-files-filter-tip value="Искать в cpp, cxx, h, hxx &amp;&amp; hpp:
 *.cpp *.cxx *.h *.hxx *.hpp
 
@@ -1801,6 +1809,7 @@ $STR_REPLACE$
 			<find-status-replace-invalid-replace-chars value="Замена: нельзя заменить текст в ANSI документе, который не соответствующий стандарту ANSI."/>
 			<find-status-cannot-find value="Поиск: Не удается найти текст &quot;$STR_REPLACE$&quot;"/>
 			<find-status-cannot-find-pebkac-maybe value="Данное совпадение не может быть найдено. Возможно, вы забыли установить флажок &quot;Зациклить поиск&quot; (на ВКЛ), &quot;Учитывать регистр&quot; (на ВЫКЛ), или &quot;Только целые слова&quot; (на ВЫКЛ)."/>
+			<find-status-regex-find-empty-string value="Данное регулярное выражение соответствует пустым строкам."/>
 			<find-status-scope-selection value="в выделенном тексте"/>
 			<find-status-scope-all value="во всем файле"/>
 			<find-status-scope-backward value="от начала файла до знак вставки"/>
