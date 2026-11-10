@@ -2802,9 +2802,10 @@ LRESULT Notepad_plus::process(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 			return TRUE;
 		}
 
+
 		case NPPM_INTERNAL_INCSEARCHBARPOSITION:
 		{
-			ReBar& rebar = nppParam.getNppGUI()._incrementalSearchBarAtTop ? _rebarTop : _rebarBottom;
+			ReBar& rebar = nppParam.getFindHistory()._incrementalSearchBarAtTop ? _rebarTop : _rebarBottom;
 			if (::GetParent(_incrementFindDlg.getHSelf()) == rebar.getHSelf()) // already there: a rebar is the parent of its band windows
 				return TRUE;
 
@@ -2820,6 +2821,14 @@ LRESULT Notepad_plus::process(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 				rebar.setIDVisible(REBAR_BAR_SEARCH, true);
 
 			::SendMessage(hwnd, WM_SIZE, 0, 0);
+			return TRUE;
+		}
+
+		case NPPM_INTERNAL_FINDDLGHIGHLIGHT:
+		{
+			if (_findReplaceDlg.isCreated())
+				_findReplaceDlg.updateMatchHighlighting();
+
 			return TRUE;
 		}
 
