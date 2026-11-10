@@ -139,12 +139,6 @@ jobs:
            "PORTABLE_ZIP=$zip" >> $env:GITHUB_ENV
            Write-Output "portable zip: $((Get-Item $zip).Length) bytes"
 
-    - name: Archive binary artifact
-      uses: actions/upload-artifact@v7
-      with:
-          name: Notepad++.XP.${{ matrix.build_platform}}.${{ matrix.build_configuration}}
-          path: ${{ env.NPP_BIN }}
-
     - name: Archive portable package (Release)
       if: matrix.build_configuration == 'Release'
       uses: actions/upload-artifact@v7
