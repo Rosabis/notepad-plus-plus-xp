@@ -20,7 +20,7 @@ jobs:
         build_configuration: [Release, Debug]
         build_platform: [Win32]
 
-    name: XP ${{ matrix.build_platform }} / ${{ matrix.build_configuration }}
+    name: XP ${{ matrix.build_platform }} / ${{ matrix.build_configuration }} ${{ matrix.build_configuration == 'Release' && '(portable package)' || '(build + tests, no artifact)' }}
 
     steps:
     - name: Checkout repo
