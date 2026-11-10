@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+#include "NppWinXpCompat.h"
 #include "SortLocale.h"
 
 static const SortLocale::Result sortSuccess { 0, "0", L"0" };
@@ -200,9 +201,9 @@ SortLocale::Result SortLocale::sort(ScintillaEditView* sci, bool descending) con
 				int wideLength = MultiByteToWideChar(codepage, 0, keyText.data(), sortableLength, 0, 0);
 				std::wstring wideText(wideLength, 0);
 				MultiByteToWideChar(codepage, 0, keyText.data(), sortableLength, wideText.data(), wideLength);
-				int m = LCMapStringEx(locale, options, wideText.data(), wideLength, 0, 0, 0, 0, 0);
+				int m = NppXP::lcMapStringEx(locale, options, wideText.data(), wideLength, 0, 0, nullptr, nullptr, 0);
 				sl.key.resize(m, 0);
-				LCMapStringEx(locale, options, wideText.data(), wideLength, reinterpret_cast<LPWSTR>(sl.key.data()), m, 0, 0, 0);
+				NppXP::lcMapStringEx(locale, options, wideText.data(), wideLength, reinterpret_cast<LPWSTR>(sl.key.data()), m, nullptr, nullptr, 0);
 			}
 		}
 

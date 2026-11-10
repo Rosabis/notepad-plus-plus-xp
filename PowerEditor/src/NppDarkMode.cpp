@@ -38,6 +38,7 @@
 #include <string>
 
 #include "NppConstants.h"
+#include "NppWinXpCompat.h"
 #include "Parameters.h"
 #include "ToolBar.h"
 #include "dpiManagerV2.h"
@@ -911,7 +912,7 @@ namespace NppDarkMode
 		static constexpr LPCWSTR lpSubKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
 		static constexpr LPCWSTR lpValue = L"AppsUseLightTheme";
 
-		const auto result = ::RegGetValueW(HKEY_CURRENT_USER, lpSubKey, lpValue, RRF_RT_REG_DWORD, nullptr, &data, &dwBufSize);
+		const auto result = NppXP::regGetValueW(HKEY_CURRENT_USER, lpSubKey, lpValue, RRF_RT_REG_DWORD, nullptr, &data, &dwBufSize);
 		if (result != ERROR_SUCCESS)
 		{
 			return false;
@@ -1179,13 +1180,13 @@ namespace NppDarkMode
 			dtto.crText = NppDarkMode::getDisabledTextColor();
 		}
 
-		DrawThemeTextEx(hTheme, hdc, iPartID, iStateID, szText, -1, dtFlags, &rcText, &dtto);
+		NppXP::drawThemeTextEx(hTheme, hdc, iPartID, iStateID, szText, -1, dtFlags, &rcText, &dtto);
 
 		if ((nState & BST_FOCUS) && !(uiState & UISF_HIDEFOCUS))
 		{
 			RECT rcTextOut = rcText;
 			dtto.dwFlags |= DTT_CALCRECT;
-			DrawThemeTextEx(hTheme, hdc, iPartID, iStateID, szText, -1, dtFlags | DT_CALCRECT, &rcTextOut, &dtto);
+			NppXP::drawThemeTextEx(hTheme, hdc, iPartID, iStateID, szText, -1, dtFlags | DT_CALCRECT, &rcTextOut, &dtto);
 			RECT rcFocus = rcTextOut;
 			rcFocus.bottom++;
 			rcFocus.left--;
@@ -1228,6 +1229,11 @@ namespace NppDarkMode
 
 		if (nState & BST_CHECKED)		iStateID += 4;
 
+		// Buffered (cross-fade) animation is a Windows Vista+ feature; on Windows XP
+		// there is no compositor to drive it, so we always paint the final state
+		// directly. The Vista+ APIs below are guarded out so they never become static
+		// imports (uxtheme.dll on XP does not export them, which would break the loader).
+#if !defined(NPP_TARGET_WINXP)
 		if (BufferedPaintRenderAnimation(hwnd, hdc))
 		{
 			return;
@@ -1268,6 +1274,10 @@ namespace NppDarkMode
 
 			buttonData.iStateID = iStateID;
 		}
+#else
+		renderButton(hwnd, hdc, buttonData.hTheme, iPartID, iStateID);
+		buttonData.iStateID = iStateID;
+#endif
 	}
 
 	static LRESULT CALLBACK ButtonSubclass(
@@ -1360,7 +1370,9 @@ namespace NppDarkMode
 				}
 			case WM_SIZE:
 			case WM_DESTROY:
+#if !defined(NPP_TARGET_WINXP)
 				BufferedPaintStopAllAnimations(hWnd);
+#endif
 				break;
 			case WM_ENABLE:
 				if (NppDarkMode::isEnabled())
@@ -1486,7 +1498,7 @@ namespace NppDarkMode
 				textFlags |= DT_HIDEPREFIX;
 			}
 
-			DrawThemeTextEx(buttonData.hTheme, hdc, BP_GROUPBOX, iStateID, szText, -1, textFlags | DT_SINGLELINE, &rcText, &dtto);
+			NppXP::drawThemeTextEx(buttonData.hTheme, hdc, BP_GROUPBOX, iStateID, szText, -1, textFlags | DT_SINGLELINE, &rcText, &dtto);
 		}
 
 		if (hCreatedFont) DeleteObject(hCreatedFont);
@@ -2100,7 +2112,7 @@ namespace NppDarkMode
 #ifdef __GNUC__
 					constexpr int CP_DROPDOWNITEM = 9; // for some reason mingw use only enum up to 8
 #endif
-					::DrawThemeTextEx(hTheme, hdc, CP_DROPDOWNITEM, isDisabled ? CBXSR_DISABLED : CBXSR_NORMAL, buffer, -1, dtFlags, &rcText, &dtto);
+					NppXP::drawThemeTextEx(hTheme, hdc, CP_DROPDOWNITEM, isDisabled ? CBXSR_DISABLED : CBXSR_NORMAL, buffer, -1, dtFlags, &rcText, &dtto);
 				}
 				else
 				{
@@ -3532,35 +3544,37 @@ namespace NppDarkMode
 
 				LRESULT lr = CDRF_DODEFAULT;
 
-				if ((rbBand.fStyle & RBBS_USECHEVRON) == RBBS_USECHEVRON
-					&& (rbBand.rcChevronLocation.right - rbBand.rcChevronLocation.left) > 0)
+#if !defined(NPP_TARGET_WINXP)
+			if ((rbBand.fStyle & RBBS_USECHEVRON) == RBBS_USECHEVRON
+				&& (rbBand.rcChevronLocation.right - rbBand.rcChevronLocation.left) > 0)
+			{
+				static int roundCornerValue = 0;
+				if (NppDarkMode::isWindows11())
 				{
-					static int roundCornerValue = 0;
-					if (NppDarkMode::isWindows11())
-					{
-						roundCornerValue = g_win11CornerRoundness + 1;
-					}
-
-					const bool isHot = (rbBand.uChevronState & STATE_SYSTEM_HOTTRACKED) == STATE_SYSTEM_HOTTRACKED;
-					const bool isPressed = (rbBand.uChevronState & STATE_SYSTEM_PRESSED) == STATE_SYSTEM_PRESSED;
-
-					if (isHot)
-					{
-						NppDarkMode::paintRoundRect(lpnmcd->hdc, rbBand.rcChevronLocation, NppDarkMode::getHotEdgePen(), NppDarkMode::getHotBackgroundBrush(), roundCornerValue, roundCornerValue);
-					}
-					else if (isPressed)
-					{
-						NppDarkMode::paintRoundRect(lpnmcd->hdc, rbBand.rcChevronLocation, NppDarkMode::getEdgePen(), NppDarkMode::getCtrlBackgroundBrush(), roundCornerValue, roundCornerValue);
-					}
-
-					::SetTextColor(lpnmcd->hdc, isHot ? NppDarkMode::getTextColor() : NppDarkMode::getDarkerTextColor());
-					::SetBkMode(lpnmcd->hdc, TRANSPARENT);
-
-					constexpr auto dtFlags = DT_NOPREFIX | DT_CENTER | DT_TOP | DT_SINGLELINE | DT_NOCLIP;
-					::DrawText(lpnmcd->hdc, L"»", -1, &rbBand.rcChevronLocation, dtFlags);
-
-					lr = CDRF_SKIPDEFAULT;
+					roundCornerValue = g_win11CornerRoundness + 1;
 				}
+
+				const bool isHot = (rbBand.uChevronState & STATE_SYSTEM_HOTTRACKED) == STATE_SYSTEM_HOTTRACKED;
+				const bool isPressed = (rbBand.uChevronState & STATE_SYSTEM_PRESSED) == STATE_SYSTEM_PRESSED;
+
+				if (isHot)
+				{
+					NppDarkMode::paintRoundRect(lpnmcd->hdc, rbBand.rcChevronLocation, NppDarkMode::getHotEdgePen(), NppDarkMode::getHotBackgroundBrush(), roundCornerValue, roundCornerValue);
+				}
+				else if (isPressed)
+				{
+					NppDarkMode::paintRoundRect(lpnmcd->hdc, rbBand.rcChevronLocation, NppDarkMode::getEdgePen(), NppDarkMode::getCtrlBackgroundBrush(), roundCornerValue, roundCornerValue);
+				}
+
+				::SetTextColor(lpnmcd->hdc, isHot ? NppDarkMode::getTextColor() : NppDarkMode::getDarkerTextColor());
+				::SetBkMode(lpnmcd->hdc, TRANSPARENT);
+
+				constexpr auto dtFlags = DT_NOPREFIX | DT_CENTER | DT_TOP | DT_SINGLELINE | DT_NOCLIP;
+				::DrawText(lpnmcd->hdc, L"»", -1, &rbBand.rcChevronLocation, dtFlags);
+
+				lr = CDRF_SKIPDEFAULT;
+			}
+#endif
 
 				if (isPlugin)
 				{
@@ -4110,7 +4124,7 @@ namespace NppDarkMode
 			}
 		}
 
-		::DrawThemeTextEx(hTheme, UDMI.um.hdc, MENU_BARITEM, iTextStateID, buffer.c_str(), static_cast<int>(mii.cch), dwFlags, &UDMI.dis.rcItem, &dttopts);
+		NppXP::drawThemeTextEx(hTheme, UDMI.um.hdc, MENU_BARITEM, iTextStateID, buffer.c_str(), static_cast<int>(mii.cch), dwFlags, &UDMI.dis.rcItem, &dttopts);
 	}
 
 	static void drawUAHMenuNCBottomLine(HWND hWnd)
@@ -4233,7 +4247,8 @@ namespace NppDarkMode
 		if (NppDarkMode::getWindowsBuildNumber() >= win10Build2004)
 		{
 			BOOL value = NppDarkMode::isEnabled() ? TRUE : FALSE;
-			::DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &value, sizeof(value));
+			// Vista+ API; silently ignored on Windows XP
+			NppXP::dwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &value, sizeof(value));
 		}
 		else
 		{
@@ -4698,6 +4713,8 @@ namespace NppDarkMode
 		return ::DefSubclassProc(hWnd, uMsg, wParam, lParam);
 	}
 
+#if !defined(NPP_TARGET_WINXP)	// TaskDialog and TASKDIALOGCONFIG are Windows Vista+
+
 	static void setDarkTaskDlgSubclass(HWND hWnd)
 	{
 		if (::GetWindowSubclass(hWnd, DarkTaskDlgSubclass, static_cast<UINT_PTR>(SubclassID::darkMode), nullptr) == FALSE)
@@ -5025,6 +5042,15 @@ namespace NppDarkMode
 		}
 		return btnPressed;
 	}
+
+#else	// NPP_TARGET_WINXP
+
+	int darkMessageBoxW(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, UINT uType)
+	{
+		return ::MessageBoxW(hWnd, lpText, lpCaption, uType);
+	}
+
+#endif
 
 	// for luminosity slider control
 	BOOL darkChooseColorW(LPCHOOSECOLORW cc)

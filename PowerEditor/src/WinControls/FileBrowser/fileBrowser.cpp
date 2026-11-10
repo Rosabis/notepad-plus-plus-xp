@@ -35,6 +35,7 @@
 #include "DockingDlgInterface.h"
 #include "Notepad_plus_msgs.h"
 #include "NppDarkMode.h"
+#include "NppWinXpCompat.h"
 #include "Parameters.h"
 #include "ReadDirectoryChanges.h"
 #include "RunDlg.h"
@@ -899,7 +900,7 @@ void FileBrowser::popupMenuCmd(int cmdID)
 
 						DWORD bufSize = sizeof(psPath);
 
-						status = ::RegGetValueW(hKey, nullptr, valueName, RRF_RT_REG_SZ, nullptr, psPath, &bufSize);
+						status = NppXP::regGetValueW(hKey, nullptr, valueName, RRF_RT_REG_SZ, nullptr, psPath, &bufSize);
 						::RegCloseKey(hKey);
 
 						if (status != ERROR_SUCCESS) return; // value not found

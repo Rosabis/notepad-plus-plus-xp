@@ -45,6 +45,7 @@
 #include "FileInterface.h"
 #include "NppConstants.h"
 #include "NppDarkMode.h"
+#include "NppWinXpCompat.h"
 #include "Utf8.h"
 #include "dpiManagerV2.h"
 
@@ -2349,7 +2350,7 @@ bool isCoreWindows()
 	if (::GetVersionEx(reinterpret_cast<LPOSVERSIONINFOW>(&osviex)))
 	{
 		DWORD dwReturnedProductType = 0;
-		if (::GetProductInfo(osviex.dwMajorVersion, osviex.dwMinorVersion, osviex.wServicePackMajor, osviex.wServicePackMinor, &dwReturnedProductType))
+		if (NppXP::getProductInfo(osviex.dwMajorVersion, osviex.dwMinorVersion, osviex.wServicePackMajor, osviex.wServicePackMinor, &dwReturnedProductType))
 		{
 			switch (dwReturnedProductType)
 			{
@@ -2550,14 +2551,8 @@ HRESULT openInExplorerAndSelect(const wchar_t* path)
 	if (!com.isInitialized())
 		return E_FAIL;
 
-	ITEMIDLIST* pidl = nullptr;
-	HRESULT hr = ::SHParseDisplayName(path, nullptr, &pidl, 0, nullptr);
-	if (SUCCEEDED(hr))
-	{
-		hr = ::SHOpenFolderAndSelectItems(pidl, 0, nullptr, 0);
-		::CoTaskMemFree(pidl);
-	}
-	return hr;
+	// SHOpenFolderAndSelectItems is Vista+; the helper falls back to explorer.exe /select on XP
+	return NppXP::openFolderAndSelect(path);
 }
 
 bool needsElevation4Access(const std::wstring& path2check, bool bWriteAccess)
@@ -2621,7 +2616,7 @@ bool needsElevation4Access(const std::wstring& path2check, bool bWriteAccess)
 				return false; // no elevation required (no exception case, we only want to check READ access and can read it - it's empty)
 
 			// generate a pseudorandom tempfile to test WRITE access
-			std::wstring tempFileName = L"test-" + std::to_wstring(::GetTickCount64()) + L".tmp";
+			std::wstring tempFileName = L"test-" + std::to_wstring(NppXP::getTickCount64()) + L".tmp";
 			testFile = targetDir / tempFileName;
 			fileExists = false;
 		}

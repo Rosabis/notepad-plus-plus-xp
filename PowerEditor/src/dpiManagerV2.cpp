@@ -15,6 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
+#include "NppWinXpCompat.h"
 #include "dpiManagerV2.h"
 
 #include <windows.h>
@@ -226,10 +227,27 @@ LOGFONT DPIManagerV2::getDefaultGUIFontForDpi(UINT dpi, FontType type)
 
 void DPIManagerV2::loadIcon(HINSTANCE hinst, const wchar_t* pszName, int cx, int cy, HICON* phico, UINT fuLoad)
 {
-	if (::LoadIconWithScaleDown(hinst, pszName, cx, cy, phico) != S_OK)
-	{
-		*phico = static_cast<HICON>(::LoadImage(hinst, pszName, IMAGE_ICON, cx, cy, fuLoad));
-	}
+	// Loader order:
+	//   1) LoadImage                 -- the normal Win32 path; works for legacy
+	//                                   BMP icon resources and, on Vista+, also
+	//                                   for PNG ones.
+	//   2) NppXP::loadIconFromResource
+	//                                -- manual RT_GROUP_ICON parsing.  On Windows
+	//                                   XP this is what actually loads the icons,
+	//                                   because it routes PNG payloads through
+	//                                   GDI+ (see NppGdiPlusIcon.h) instead of
+	//                                   relying on user32's PNG support.
+	//
+	// LoadIconWithScaleDown is deliberately NOT used: it only exists on Vista+,
+	// its export ordinal is not stable across comctl32 builds, and probing for it
+	// turned out to be a reliable way to crash the process.  The two loaders
+	// above cover everything it would have provided.
+
+	*phico = static_cast<HICON>(::LoadImage(hinst, pszName, IMAGE_ICON, cx, cy, fuLoad));
+	if (*phico != nullptr)
+		return;
+
+	*phico = NppXP::loadIconFromResource(hinst, pszName, cx, cy);
 }
 
 DWORD DPIManagerV2::getTextScaleFactor()
@@ -240,7 +258,7 @@ DWORD DPIManagerV2::getTextScaleFactor()
 	static constexpr LPCWSTR lpSubKey = L"Software\\Microsoft\\Accessibility";
 	static constexpr LPCWSTR lpValue = L"TextScaleFactor";
 
-	if (::RegGetValueW(HKEY_CURRENT_USER, lpSubKey, lpValue, RRF_RT_REG_DWORD, nullptr, &data, &dwBufSize) == ERROR_SUCCESS)
+	if (NppXP::regGetValueW(HKEY_CURRENT_USER, lpSubKey, lpValue, RRF_RT_REG_DWORD, nullptr, &data, &dwBufSize) == ERROR_SUCCESS)
 	{
 		return data;
 	}

@@ -162,22 +162,22 @@ Notepad_plus::Notepad_plus()
 	}
 
 	// Determine if user is administrator.
+	// Checked on every Windows version. Upstream only runs this check on Vista+ and
+	// hardcodes is_admin = false below that, which permanently disables the file
+	// association page on Windows XP. XP has no UAC elevation, but limited accounts
+	// still exist there and cannot write HKCR, so the same token-membership test is
+	// exactly the right semantic. Both AllocateAndInitializeSid and CheckTokenMembership
+	// ship with XP RTM (advapi32.dll), so no compat wrapper is needed.
 	BOOL is_admin;
-	winVer ver = nppParam.getWinVersion();
-	if (ver >= WV_VISTA || ver == WV_UNKNOWN)
+	SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
+	PSID AdministratorsGroup;
+	is_admin = AllocateAndInitializeSid(&NtAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &AdministratorsGroup);
+	if (is_admin)
 	{
-		SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
-		PSID AdministratorsGroup;
-		is_admin = AllocateAndInitializeSid(&NtAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &AdministratorsGroup);
-		if (is_admin)
-		{
-			if (!CheckTokenMembership(NULL, AdministratorsGroup, &is_admin))
-				is_admin = FALSE;
-			FreeSid(AdministratorsGroup);
-		}
+		if (!CheckTokenMembership(NULL, AdministratorsGroup, &is_admin))
+			is_admin = FALSE;
+		FreeSid(AdministratorsGroup);
 	}
-	else
-		is_admin = false;
 
 	nppParam.setAdminMode(is_admin == TRUE);
 	_isAdministrator = is_admin ? true : false;

@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #pragma once
+#include "NppWinXpCompat.h"
 #include "Notepad_plus.h"
 
 constexpr int splitterSize = 8;
@@ -71,9 +72,10 @@ public:
 	bool addClipboardListener() {
 		if (!_isClipboardListener)
 		{
-			_isClipboardListener = ::AddClipboardFormatListener(_hSelf);
+			_isClipboardListener = NppXP::addClipboardFormatListener(_hSelf) != FALSE;
 #ifndef NDEBUG
-			if (!_isClipboardListener)
+			// no clipboard change notification exists before Windows Vista
+			if (!_isClipboardListener && ::GetLastError() != ERROR_CALL_NOT_IMPLEMENTED)
 			{
 				std::wstring msg = L"AddClipboardFormatListener failed!\n\nErrorCode: ";
 				msg += std::to_wstring(::GetLastError());
@@ -89,9 +91,9 @@ public:
 		{
 			_isClipboardListener = false;
 #ifdef NDEBUG
-			::RemoveClipboardFormatListener(_hSelf);
+			NppXP::removeClipboardFormatListener(_hSelf);
 #else
-			BOOL bRemoved = ::RemoveClipboardFormatListener(_hSelf);
+			BOOL bRemoved = NppXP::removeClipboardFormatListener(_hSelf);
 			if (!bRemoved)
 			{
 				std::wstring msg = L"RemoveClipboardFormatListener failed!\n\nErrorCode: ";

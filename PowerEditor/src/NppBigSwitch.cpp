@@ -21,6 +21,7 @@
 #include <format>
 #include <windowsx.h> // for GET_X_LPARAM, GET_Y_LPARAM
 #include <atomic>
+#include "MISC/Exception/Win32Exception.h"
 #include "Notepad_plus_Window.h"
 #include "TaskListDlg.h"
 #include "ShortcutMapper.h"
@@ -33,6 +34,7 @@
 #include "fileBrowser.h"
 #include "NppDarkMode.h"
 #include "NppConstants.h"
+#include "NppWinXpCompat.h"
 
 using namespace std;
 
@@ -78,7 +80,8 @@ bool SetOSAppRestart()
 	wchar_t wszCmdLine[RESTART_MAX_CMD_LINE] = { 0 };
 	DWORD cchCmdLine = _countof(wszCmdLine);
 	DWORD dwPreviousFlags = 0;
-	HRESULT hr = ::GetApplicationRestartSettings(::GetCurrentProcess(), wszCmdLine, &cchCmdLine, &dwPreviousFlags);
+	// Application Recovery and Restart is Windows Vista+; on XP every call below is a no-op
+	HRESULT hr = NppXP::getApplicationRestartSettings(::GetCurrentProcess(), wszCmdLine, &cchCmdLine, &dwPreviousFlags);
 	if (bUnregister)
 	{
 		// unregistering (disabling) request
@@ -93,7 +96,7 @@ bool SetOSAppRestart()
 			if (hr == S_OK)
 			{
 				// has been already registered before, try to unregister
-				if (::UnregisterApplicationRestart() == S_OK)
+				if (NppXP::unregisterApplicationRestart() == S_OK)
 				{
 					bRet = true;
 				}
@@ -105,7 +108,7 @@ bool SetOSAppRestart()
 		// registering request
 
 		if (hr == S_OK)
-			::UnregisterApplicationRestart(); // remove a previous registration 1st
+			NppXP::unregisterApplicationRestart(); // remove a previous registration 1st
 
 		if (nppParam.getCmdLineString().length() < RESTART_MAX_CMD_LINE)
 		{
@@ -114,7 +117,7 @@ bool SetOSAppRestart()
 			// RESTART_NO_HANG   (2) ... for termination due to application hangs
 			// RESTART_NO_PATCH  (4) ... for termination due to patch installations
 			// RESTART_NO_REBOOT (8) ... when the system is rebooted
-			hr = ::RegisterApplicationRestart(nppParam.getCmdLineString().c_str(), RESTART_NO_CRASH | RESTART_NO_HANG | RESTART_NO_PATCH);
+			hr = NppXP::registerApplicationRestart(nppParam.getCmdLineString().c_str(), RESTART_NO_CRASH | RESTART_NO_HANG | RESTART_NO_PATCH);
 			if (hr == S_OK)
 			{
 				bRet = true;
@@ -171,8 +174,8 @@ static bool isSenderTrusted(WPARAM wParam)
 		wchar_t selfImagePath[MAX_PATH]{};
 		DWORD dwSizeSelf = MAX_PATH;
 
-		if (::QueryFullProcessImageNameW(hProcess, 0, senderImagePath, &dwSizeSender) &&
-			::QueryFullProcessImageNameW(::GetCurrentProcess(), 0, selfImagePath, &dwSizeSelf))
+		if (NppXP::queryFullProcessImageNameW(hProcess, 0, senderImagePath, &dwSizeSender) &&
+			NppXP::queryFullProcessImageNameW(::GetCurrentProcess(), 0, selfImagePath, &dwSizeSelf))
 		{
 			isTrusted = (_wcsicmp(senderImagePath, selfImagePath) == 0);
 		}
@@ -245,7 +248,31 @@ LRESULT Notepad_plus_Window::runProc(HWND hwnd, UINT message, WPARAM wParam, LPA
 			}
 			catch (std::exception& ex)
 			{
-				::MessageBoxA(hwnd, ex.what(), "Exception On WM_CREATE", MB_OK);
+				// [DIAG] Show exception details to identify crash location
+				std::string msg = ex.what();
+				const Win32Exception* win32Ex = dynamic_cast<const Win32Exception*>(&ex);
+				if (win32Ex && win32Ex->where() != nullptr)
+				{
+					char buf[256] = {};
+					snprintf(buf, sizeof(buf),
+						"\n\nFault PC: 0x%p\n"
+						"Exception Code: 0x%08X",
+						win32Ex->where(),
+						win32Ex->code());
+					msg += buf;
+
+					const Win32AccessViolation* avEx = dynamic_cast<const Win32AccessViolation*>(&ex);
+					if (avEx)
+					{
+						snprintf(buf, sizeof(buf),
+							"\nBad Address: 0x%p\n"
+						"  %s",
+							avEx->badAddress(),
+						avEx->isWrite() ? "WRITE" : "READ");
+						msg += buf;
+					}
+				}
+				::MessageBoxA(hwnd, msg.c_str(), "Exception On WM_CREATE", MB_OK);
 				exit(-1);
 			}
 			break;
@@ -2278,14 +2305,19 @@ LRESULT Notepad_plus::process(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 
 						switch (lpnmcd->dwDrawStage)
 						{
-							case CDDS_PREPAINT:
-							{
-								if (!NppDarkMode::isEnabled())
-								{
-									return CDRF_DODEFAULT;
-								}
+					case CDDS_PREPAINT:
+					{
+#if defined(NPP_TARGET_WINXP)
+						// REBARBANDINFO::rcChevronLocation and RBBIM_CHEVRONLOCATION only exist
+						// from Windows Vista on, and dark mode needs Windows 10 anyway.
+						return CDRF_DODEFAULT;
+#else
+						if (!NppDarkMode::isEnabled())
+						{
+							return CDRF_DODEFAULT;
+						}
 
-								::FillRect(lpnmcd->hdc, &lpnmcd->rc, NppDarkMode::getDlgBackgroundBrush());
+						::FillRect(lpnmcd->hdc, &lpnmcd->rc, NppDarkMode::getDlgBackgroundBrush());
 								REBARBANDINFO rbBand{};
 								rbBand.cbSize = sizeof(REBARBANDINFO);
 								rbBand.fMask = RBBIM_STYLE | RBBIM_CHEVRONLOCATION | RBBIM_CHEVRONSTATE;
@@ -2320,11 +2352,12 @@ LRESULT Notepad_plus::process(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 									constexpr auto dtFlags = DT_NOPREFIX | DT_CENTER | DT_TOP | DT_SINGLELINE | DT_NOCLIP;
 									::DrawText(lpnmcd->hdc, L"»", -1, &rbBand.rcChevronLocation, dtFlags);
 
-									lr = CDRF_SKIPDEFAULT;
-								}
+							lr = CDRF_SKIPDEFAULT;
+						}
 
-								return lr;
-							}
+						return lr;
+#endif
+					}
 
 							default:
 								break;

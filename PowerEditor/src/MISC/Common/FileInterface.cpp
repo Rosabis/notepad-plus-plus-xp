@@ -17,6 +17,7 @@
 #include <locale>
 #include <shlwapi.h>
 #include "FileInterface.h"
+#include "NppWinXpCompat.h"
 #include "Parameters.h"
 
 using namespace std;
@@ -43,11 +44,20 @@ Win32_IO_File::Win32_IO_File(const wchar_t *fname)
 		{
 			// Check the existence of Alternate Data Streams
 			WIN32_FIND_STREAM_DATA findData;
-			HANDLE hFind = FindFirstStreamW(fname, FindStreamInfoStandard, &findData, 0);
+			HANDLE hFind = NppXP::findFirstStreamW(fname, FindStreamInfoStandard, &findData, 0);
 			if (hFind != INVALID_HANDLE_VALUE) // Alternate Data Streams found
 			{
 				dispParam = TRUNCATE_EXISTING;
-				FindClose(hFind);
+				::FindClose(hFind);
+			}
+			else if (!NppXP::hasFindFirstStream())
+			{
+				// Windows XP has no FindFirstStreamW, so we cannot know whether this file
+				// carries Alternate Data Streams. CREATE_ALWAYS would silently discard them,
+				// so take the stream-preserving branch instead: TRUNCATE_EXISTING keeps every
+				// stream (plus the original creation date and attributes) intact. If it fails
+				// for any reason the recovery below falls back to CREATE_ALWAYS.
+				dispParam = TRUNCATE_EXISTING;
 			}
 		}
 		else
@@ -65,7 +75,11 @@ Win32_IO_File::Win32_IO_File(const wchar_t *fname)
 		// Race condition management:
 		//  If file didn't exist while calling getFileAttributesExWithTimeout, but before calling CreateFileW, file is created: use CREATE_ALWAYS is OK
 		//  If file did exist while calling getFileAttributesExWithTimeout, but before calling CreateFileW, file is deleted: use TRUNCATE_EXISTING will cause the error
-		if (dispParam == TRUNCATE_EXISTING && _hFile == INVALID_HANDLE_VALUE && ::GetLastError() == ERROR_FILE_NOT_FOUND)
+		//  On Windows XP TRUNCATE_EXISTING was chosen blindly (no way to probe for Alternate
+		//  Data Streams), so there any failure -- not just ERROR_FILE_NOT_FOUND -- has to fall
+		//  back to CREATE_ALWAYS. On Vista+ the original ERROR_FILE_NOT_FOUND-only rule stands.
+		if (dispParam == TRUNCATE_EXISTING && _hFile == INVALID_HANDLE_VALUE
+			&& (::GetLastError() == ERROR_FILE_NOT_FOUND || !NppXP::hasFindFirstStream()))
 		{
 			dispParam = CREATE_ALWAYS;
 			_hFile = ::CreateFileW(fname, _accessParam, _shareParam, NULL, dispParam, _attribParam, NULL);
@@ -108,7 +122,8 @@ void Win32_IO_File::close()
 					const DWORD cchPathBuf = MAX_PATH + 128;
 					wchar_t pathbuf[cchPathBuf]{};
 					// the dwFlags used below are the most error-proof and informative
-					DWORD dwRet = ::GetFinalPathNameByHandle(_hFile, pathbuf, cchPathBuf, FILE_NAME_OPENED | VOLUME_NAME_NT);
+					// Vista+ only: returns 0 on Windows XP, in which case the plain path is shown instead
+					DWORD dwRet = NppXP::getFinalPathNameByHandle(_hFile, pathbuf, cchPathBuf, FILE_NAME_OPENED | VOLUME_NAME_NT);
 					if ((dwRet == 0) || (dwRet >= cchPathBuf))
 					{
 						// probably insufficient path-buffer length, the classic style must suffice

@@ -14,6 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// When targeting Windows XP the SDK hides the Common Item Dialog COM interfaces
+// (IFileDialog, IShellItem, IFileDialogCustomize, ...) because NTDDI_VERSION is pinned
+// to Windows XP. Those interfaces are used purely through COM (CoCreateInstance), which
+// fails gracefully on XP -- every call is forwarded to LegacyFileDialog there. Exposing
+// the Vista type declarations for this translation unit therefore introduces no new
+// statically-linked API, it only lets the code compile.
+#if defined(_WIN32_WINNT) && (_WIN32_WINNT < 0x0600)
+#  undef NTDDI_VERSION
+#  define NTDDI_VERSION 0x0A00000A  // NTDDI_WIN10 -- enough to see the Vista interfaces
+#endif
 
 #include <shobjidl.h>
 #ifdef __MINGW32__
@@ -24,6 +34,8 @@
 #include <imm.h>		// ImmGetContext, ImmGetCompositionString
 #include <unordered_map>
 #include "CustomFileDialog.h"
+#include "LegacyFileDialog.h"
+#include "NppWinXpCompat.h"
 #include "Parameters.h"
 #include "localization.h"
 
@@ -122,7 +134,8 @@ namespace // anonymous
 	bool setDialogFolder(IFileDialog* dialog, const wchar_t* path)
 	{
 		com_ptr<IShellItem> shellItem;
-		HRESULT hr = SHCreateItemFromParsingName(path,
+		// Vista+ API: returns E_NOTIMPL on Windows XP, where this code path is not used anyway
+		HRESULT hr = NppXP::shCreateItemFromParsingName(path,
 			nullptr,
 			IID_PPV_ARGS(&shellItem));
 		if (SUCCEEDED(hr) && shellItem && !::doesDirectoryExist(path))
@@ -925,6 +938,7 @@ public:
 
 	std::vector<wstring> getFilenames()
 	{
+#if !defined(NPP_TARGET_WINXP)
 		std::vector<wstring> result;
 		// Only the open dialog can have multiple results.
 		com_ptr<IFileOpenDialog> pfd = _dialog;
@@ -952,6 +966,11 @@ public:
 			}
 		}
 		return result;
+#else
+		// On Windows XP the classic common dialog (LegacyFileDialog) is used instead,
+		// so this code path is never reached; keep a stub so the symbol still resolves.
+		return {};
+#endif
 	}
 
 	HWND _hwndOwner = nullptr;
@@ -988,17 +1007,38 @@ CustomFileDialog::CustomFileDialog(HWND hwnd) : _impl{ std::make_unique<Impl>() 
 	const wchar_t* workDir = nppGUI._openSaveDir == dir_last ? nppGUI._lastUsedDir : params.getWorkingDir();
 	if (workDir)
 		_impl->_fallbackFolder = workDir;
+
+	// The Common Item Dialog (IFileDialog) is Vista+; fall back to the classic
+	// common dialogs on Windows XP / Server 2003.
+	if (params.getWinVersion() < WV_VISTA)
+	{
+		_legacy = std::make_unique<LegacyFileDialog>(hwnd);
+		if (workDir)
+			_legacy->setFolder(workDir);
+	}
 }
 
 CustomFileDialog::~CustomFileDialog() = default;
 
 void CustomFileDialog::setTitle(const wchar_t* title)
 {
+	if (_legacy)
+	{
+		_legacy->setTitle(title);
+		return;
+	}
+
 	_impl->_title = title;
 }
 
 void CustomFileDialog::setExtFilter(const wchar_t *extText, const wchar_t *exts)
 {
+	if (_legacy)
+	{
+		_legacy->setExtFilter(extText, exts);
+		return;
+	}
+
 	// Add an asterisk before each dot in file patterns
 	wstring newExts{ exts ? exts : L"" };
 	for (size_t pos = 0; pos < newExts.size(); ++pos)
@@ -1033,32 +1073,68 @@ void CustomFileDialog::setExtFilter(const wchar_t *extText, std::initializer_lis
 
 void CustomFileDialog::setDefExt(const wchar_t* ext)
 {
+	if (_legacy)
+	{
+		_legacy->setDefExt(ext);
+		return;
+	}
+
 	_impl->_defExt = ext;
 }
 
 void CustomFileDialog::setDefFileName(const wchar_t* fn)
 {
+	if (_legacy)
+	{
+		_legacy->setDefFileName(fn);
+		return;
+	}
+
 	_impl->_initialFileName = fn;
 }
 
 void CustomFileDialog::setFolder(const wchar_t* folder)
 {
+	if (_legacy)
+	{
+		_legacy->setFolder(folder);
+		return;
+	}
+
 	_impl->_initialFolder = folder ? folder : L"";
 }
 
 void CustomFileDialog::setCheckbox(const wchar_t* text, bool isActive)
 {
+	if (_legacy)
+	{
+		_legacy->setCheckbox(text, isActive);
+		return;
+	}
+
 	_impl->_checkboxLabel = text;
 	_impl->_isCheckboxActive = isActive;
 }
 
 void CustomFileDialog::setExtIndex(int extTypeIndex)
 {
+	if (_legacy)
+	{
+		_legacy->setExtIndex(extTypeIndex);
+		return;
+	}
+
 	_impl->_fileTypeIndex = extTypeIndex;
 }
 
 void CustomFileDialog::setSaveAsCopy(bool isSavingAsCopy)
 {
+	if (_legacy)
+	{
+		_legacy->setSaveAsCopy(isSavingAsCopy);
+		return;
+	}
+
 	if (isSavingAsCopy)
 	{
 		_impl->_savingAsCopyInfo |= SAVE_AS_COPY_DLG;
@@ -1071,37 +1147,58 @@ void CustomFileDialog::setSaveAsCopy(bool isSavingAsCopy)
 
 bool CustomFileDialog::getOpenTheCopyAfterSaveAsCopy()
 {
+	if (_legacy)
+		return _legacy->getOpenTheCopyAfterSaveAsCopy();
+
 	return (_impl->_savingAsCopyInfo & SAVE_AS_COPY_OPEN) != 0;
 }
 
 bool CustomFileDialog::getCheckboxState() const
 {
+	if (_legacy)
+		return _legacy->getCheckboxState();
+
 	return _impl->getCheckboxState(IDC_FILE_CUSTOM_CHECKBOX);
 }
 
 bool CustomFileDialog::isReadOnly() const
 {
+	if (_legacy)
+		return _legacy->isReadOnly();
+
 	return _impl->_hasReadonly;
 }
 
 void CustomFileDialog::enableFileTypeCheckbox(const wstring& text, bool value)
 {
 	assert(!text.empty());
-	if (!text.empty())
+	if (text.empty())
+		return;
+
+	if (_legacy)
 	{
-		_impl->_fileTypeCheckboxLabel = text;
-		_impl->_enableFileTypeCheckbox = true;
-		_impl->_fileTypeCheckboxValue = value;
+		_legacy->enableFileTypeCheckbox(text, value);
+		return;
 	}
+
+	_impl->_fileTypeCheckboxLabel = text;
+	_impl->_enableFileTypeCheckbox = true;
+	_impl->_fileTypeCheckboxValue = value;
 }
 
 bool CustomFileDialog::getFileTypeCheckboxValue() const
 {
+	if (_legacy)
+		return _legacy->getFileTypeCheckboxValue();
+
 	return _impl->getCheckboxState(IDC_FILE_TYPE_CHECKBOX);
 }
 
 wstring CustomFileDialog::doSaveDlg()
 {
+	if (_legacy)
+		return _legacy->doSaveDlg();
+
 	if (!_impl->initSave())
 		return {};
 
@@ -1114,6 +1211,9 @@ wstring CustomFileDialog::doSaveDlg()
 
 wstring CustomFileDialog::doOpenSingleFileDlg()
 {
+	if (_legacy)
+		return _legacy->doOpenSingleFileDlg();
+
 	if (!_impl->initOpen())
 		return {};
 
@@ -1126,6 +1226,9 @@ wstring CustomFileDialog::doOpenSingleFileDlg()
 
 std::vector<wstring> CustomFileDialog::doOpenMultiFilesDlg()
 {
+	if (_legacy)
+		return _legacy->doOpenMultiFilesDlg();
+
 	if (!_impl->initOpen())
 		return {};
 
@@ -1140,6 +1243,9 @@ std::vector<wstring> CustomFileDialog::doOpenMultiFilesDlg()
 
 wstring CustomFileDialog::pickFolder()
 {
+	if (_legacy)
+		return _legacy->pickFolder();
+
 	if (!_impl->initOpen())
 		return {};
 

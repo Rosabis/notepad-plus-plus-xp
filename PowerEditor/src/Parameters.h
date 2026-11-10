@@ -47,6 +47,7 @@
 #include "Notepad_plus_msgs.h"
 #include "NppConstants.h"
 #include "NppDarkMode.h"
+#include "NppWinXpCompat.h"
 #include "NppXml.h"
 #include "ToolBar.h"
 #include "colors.h"
@@ -1685,10 +1686,8 @@ public:
 	int defaultCodepage() const { // return all the codepage except UTF8 (65001)
 		if (isCurrentSystemCodepageUTF8())
 		{
-			int localCodepage = 0;
-			// Get the system default codepage, which is the codepage before "Beta: Use Unicode UTF-8 for worldwide language support" option being checked
-			GetLocaleInfoEx(LOCALE_NAME_SYSTEM_DEFAULT, LOCALE_IDEFAULTANSICODEPAGE | LOCALE_RETURN_NUMBER, reinterpret_cast<LPTSTR>(&localCodepage), 2);
-			return localCodepage;
+		// Get the system default codepage, which is the codepage before "Beta: Use Unicode UTF-8 for worldwide language support" option being checked
+		return NppXP::getSystemDefaultAnsiCodepage();
 		}
 		return _currentSystemCodepage;
 	}

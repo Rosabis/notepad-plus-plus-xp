@@ -53,11 +53,11 @@ CXXFLAGS := -include $(GCC_DIRECTORY)/gcc-fixes.h -std=c++20 -Wpedantic -Wall -W
 RC := $(CROSS_COMPILE)windres
 RCFLAGS := --codepage=65001
 CPP_PATH := $(SCINTILLA_DIRECTORY)/include $(LEXILLA_DIRECTORY)/include
-CPP_DEFINE := UNICODE _UNICODE OEMRESOURCE NOMINMAX _WIN32_WINNT=_WIN32_WINNT_WIN7 NTDDI_VERSION=NTDDI_WIN7
+CPP_DEFINE := UNICODE _UNICODE OEMRESOURCE NOMINMAX _WIN32_WINNT=_WIN32_WINNT_WINXP WINVER=0x0501 NTDDI_VERSION=NTDDI_WINXPSP3
 LD := $(CXX)
 LDFLAGS := -municode -mwindows
 LD_PATH :=
-LD_LINK := comctl32 crypt32 dbghelp ole32 sensapi shlwapi uuid uxtheme version wininet wintrust dwmapi bcrypt
+LD_LINK := comctl32 crypt32 dbghelp ole32 sensapi shlwapi uuid uxtheme version wininet wintrust dwmapi
 LD_LINK += $(patsubst lib%.a,%,$(SCINTILLA_TARGET)) $(patsubst lib%.a,%,$(LEXILLA_TARGET)) imm32 msimg32 ole32 oleaut32
 SUBMAKEFLAGS := -O --no-print-directory
 
@@ -151,6 +151,13 @@ else ifneq "$(and $(findstring x86_64,$(TARGET_CPU)),$(findstring command line,$
 export CXX += -m64
 export LD += -m64
 export RC += -Fpe-x86-64
+endif
+
+# Notepad++ XP edition: 5.01 for 32-bit Windows XP, 5.02 for XP x64 / Server 2003
+ifeq "$(TARGET_CPU)" "x86_64"
+LDFLAGS += -Wl,--major-subsystem-version,5 -Wl,--minor-subsystem-version,2
+else
+LDFLAGS += -Wl,--major-subsystem-version,5 -Wl,--minor-subsystem-version,1
 endif
 
 # define target and build directories and update dependent variables

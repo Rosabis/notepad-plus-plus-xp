@@ -31,6 +31,7 @@
 #include "Common.h"
 #include "NppConstants.h"
 #include "NppDarkMode.h"
+#include "NppWinXpCompat.h"	// TTI_ERROR_LARGE for Windows XP targeting
 #include "Parameters.h"
 #include "ScintillaEditView.h"
 #include "Window.h"

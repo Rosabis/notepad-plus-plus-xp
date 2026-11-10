@@ -48,6 +48,7 @@
 #include "Notepad_plus.h"
 #include "Notepad_plus_msgs.h"
 #include "NppConstants.h"
+#include "NppWinXpCompat.h"
 #include "Parameters.h"
 #include "ScintillaEditView.h"
 #include "localization.h"
@@ -1368,7 +1369,7 @@ bool FileManager::backupCurrentBuffer()
 					if (buffer->isUntitled()) // "new #" file is saved successfully, then we replace its only physical existence by its temp
 					{
 						if (doesFileExist(fullpath))
-							::ReplaceFile(fullpath, fullpathTemp.c_str(), nullptr, REPLACEFILE_IGNORE_MERGE_ERRORS | REPLACEFILE_IGNORE_ACL_ERRORS, 0, 0);
+							NppXP::replaceFile(fullpath, fullpathTemp.c_str(), nullptr, REPLACEFILE_IGNORE_MERGE_ERRORS | REPLACEFILE_IGNORE_ACL_ERRORS, 0, 0);
 						else
 							::MoveFileEx(fullpathTemp.c_str(), fullpath, MOVEFILE_REPLACE_EXISTING);
 					}

@@ -64,6 +64,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -122,6 +123,7 @@
     <ClCompile Include="..\src\MISC\Common\FileInterface.cpp" />
     <ClCompile Include="..\src\WinControls\ContextMenu\ContextMenu.cpp" />
     <ClCompile Include="..\src\WinControls\OpenSaveFileDialog\CustomFileDialog.cpp" />
+    <ClCompile Include="..\src\WinControls\OpenSaveFileDialog\LegacyFileDialog.cpp" />
     <ClCompile Include="..\src\WinControls\PluginsAdmin\pluginsAdmin.cpp" />
     <ClCompile Include="..\src\WinControls\TabBar\ControlsTab.cpp" />
     <ClCompile Include="..\src\WinControls\DockingWnd\DockingCont.cpp" />
@@ -192,6 +194,7 @@
     <ClCompile Include="..\src\WinControls\ReadDirectoryChanges\ReadDirectoryChanges.cpp" />
     <ClCompile Include="..\src\WinControls\ReadDirectoryChanges\ReadDirectoryChangesPrivate.cpp" />
     <ClCompile Include="..\src\WinControls\ReadDirectoryChanges\ReadFileChanges.cpp" />
+    <ClCompile Include="..\src\MISC\Common\NppXpGetModuleHandleEx.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\src\MISC\md5\md5Dlgs.rc" />
@@ -269,6 +272,7 @@
     <ClInclude Include="..\src\MISC\Common\FileInterface.h" />
     <ClInclude Include="..\src\WinControls\ContextMenu\ContextMenu.h" />
     <ClInclude Include="..\src\WinControls\OpenSaveFileDialog\CustomFileDialog.h" />
+    <ClInclude Include="..\src\WinControls\OpenSaveFileDialog\LegacyFileDialog.h" />
     <ClInclude Include="..\src\WinControls\PluginsAdmin\pluginsAdmin.h" />
     <ClInclude Include="..\src\WinControls\PluginsAdmin\pluginsAdminRes.h" />
     <ClInclude Include="..\src\WinControls\Preference\preference_rc.h" />
@@ -366,8 +370,14 @@
   <ItemGroup>
     <Manifest Include="..\src\notepad++.exe.manifest" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- x86-only shim: redirects the CRT's kernel32!GetModuleHandleExW import to our
+         XP-safe emulation (NppXpGetModuleHandleEx.cpp). Not built for x64/ARM64. -->
+    <MASM Include="..\src\MISC\Common\NppXpShims.asm" Condition="'$(Platform)'=='Win32'" />
+  </ItemGroup>
   <Import Project="notepadPlus.uchardet.targets" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
   </ImportGroup>
 </Project>

@@ -41,6 +41,7 @@
 #include "Notepad_plus_msgs.h"
 #include "NppConstants.h"
 #include "NppDarkMode.h"
+#include "NppWinXpCompat.h"
 #include "Parameters.h"
 #include "Processus.h"
 #include "ProjectPanel.h"
@@ -260,7 +261,7 @@ void Notepad_plus::command(int id)
 
 				DWORD bufSize = sizeof(psPath);
 
-				status = ::RegGetValueW(hKey, nullptr, valueName, RRF_RT_REG_SZ, nullptr, psPath, &bufSize);
+				status = NppXP::regGetValueW(hKey, nullptr, valueName, RRF_RT_REG_SZ, nullptr, psPath, &bufSize);
 				::RegCloseKey(hKey);
 
 				if (status != ERROR_SUCCESS) return; // value not found

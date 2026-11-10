@@ -26,6 +26,7 @@
 #include "NppConstants.h"
 #include "NppDarkMode.h"
 #include "dpiManagerV2.h"
+#include "NppWinXpCompat.h"	// SM_CXPADDEDBORDER for Windows XP targeting
 
 void TaskList::init(HINSTANCE hInst, HWND parent, HIMAGELIST hImaLst, int nbItem, int index2set)
 {

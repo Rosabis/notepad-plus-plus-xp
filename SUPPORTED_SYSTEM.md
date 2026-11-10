@@ -1,6 +1,12 @@
 
 ## Supported OS Table
 
+> **Notepad++ XP edition:** this fork restores Windows XP support. The 32-bit build
+> (the only one produced here) runs on Windows XP SP3 and Windows Server 2003 SP2 and up.
+> Windows XP x64 / Server 2003 x64 is not built by CI, but a Win32 binary runs there in WOW64.
+> Features that require a newer Windows (dark mode, DirectWrite rendering, the Vista
+> file dialogs, TaskDialog, application restart) stay inactive on XP.
+
 * The column **OS** is the list of different MS Windows generations.
 * The column **last version can be run** is for the status of the latest release to be run under the OS. If the current (latest) version can be run under the specific OS, then the `current version`  will be indicated instead of version number.
 * The column **supported** contains the status of Notepad++ team supporting Notepad++ under the specific OS. It means if a bug is present under an OS no more supported but not under supported OS, then this issue won't be treated by the team.
@@ -12,8 +18,8 @@
 | **Windows ME**          | v6.0                     |          No               |
 | **Windows NT 4.0**      | v4.7.3                   |          No               |
 | **Windows 2000**        | v6.6.9                   |          No               |
-| **Windows XP**          | v7.9.2                   |          No               |
-| **Windows Server 2003** | v7.9.2                   |          No               |
+| **Windows XP**          | current version          |          Yes              |
+| **Windows Server 2003** | current version          |          Yes              |
 | **Windows Vista**       | v8.4.6  \*               |          No               |
 | **Windows Server 2008** | v8.4.6  \*               |          No               |
 | **Windows 7**           | current version          |          No               |

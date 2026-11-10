@@ -540,12 +540,18 @@ void TabBarPlus::setCloseBtnImageList()
 
 	_hCloseBtnImgLst = ::ImageList_Create(btnSize, btnSize, ILC_COLOR32 | ILC_MASK, static_cast<int>(ids.size()), 0);
 
-	for (const auto& id : ids)
+	if (_hCloseBtnImgLst != nullptr)
 	{
-		HICON hIcon = nullptr;
-		DPIManagerV2::loadIcon(_hInst, MAKEINTRESOURCE(id), btnSize, btnSize, &hIcon);
-		::ImageList_AddIcon(_hCloseBtnImgLst, hIcon);
-		::DestroyIcon(hIcon);
+		for (const auto& id : ids)
+		{
+			HICON hIcon = nullptr;
+			DPIManagerV2::loadIcon(_hInst, MAKEINTRESOURCE(id), btnSize, btnSize, &hIcon);
+			if (hIcon)
+			{
+				::ImageList_AddIcon(_hCloseBtnImgLst, hIcon);
+				::DestroyIcon(hIcon);
+			}
+		}
 	}
 
 	_closeButtonZone._width = btnSize;
@@ -590,12 +596,18 @@ void TabBarPlus::setPinBtnImageList()
 
 	_hPinBtnImgLst = ::ImageList_Create(btnSize, btnSize, ILC_COLOR32 | ILC_MASK, static_cast<int>(ids.size()), 0);
 
-	for (const auto& id : ids)
+	if (_hPinBtnImgLst != nullptr)
 	{
-		HICON hIcon = nullptr;
-		DPIManagerV2::loadIcon(_hInst, MAKEINTRESOURCE(id), btnSize, btnSize, &hIcon);
-		::ImageList_AddIcon(_hPinBtnImgLst, hIcon);
-		::DestroyIcon(hIcon);
+		for (const auto& id : ids)
+		{
+			HICON hIcon = nullptr;
+			DPIManagerV2::loadIcon(_hInst, MAKEINTRESOURCE(id), btnSize, btnSize, &hIcon);
+			if (hIcon)
+			{
+				::ImageList_AddIcon(_hPinBtnImgLst, hIcon);
+				::DestroyIcon(hIcon);
+			}
+		}
 	}
 
 	_pinButtonZone._width = btnSize;

@@ -1,10 +1,17 @@
-# Building Notepad++
+# Building Notepad++ (Windows XP edition)
+
+> **This fork targets Windows XP.** Every build is a 32-bit (Win32) Windows XP build:
+> the PE subsystem version is 5.01 and the CRT/STL calls that Windows XP does not provide
+> are supplied by [YY-Thunks](https://github.com/Chuyu-Team/YY-Thunks).
+> The CI workflow builds `Release` and `Debug` for `Win32` only.
 
 ## Microsoft Visual Studio
 
 **Pre-requisites:**
 
 - Microsoft Visual Studio 2022 version 17.5 (C/C++ Compiler, v143 toolset for win32, x64, arm64)
+- [YY-Thunks-Objs](https://github.com/Chuyu-Team/YY-Thunks/releases) (only needed to produce a
+  binary that actually runs on Windows XP)
 
 There are three components which are built from one visual studio solution:
 
@@ -17,8 +24,75 @@ Notepad++ is always built **with** Boost regex PCRE support instead of default c
 ### Build `notepad++.exe`
 
  1. Open [`PowerEditor\visual.net\notepadPlus.sln`](https://github.com/notepad-plus-plus/notepad-plus-plus/blob/master/PowerEditor/visual.net/notepadPlus.sln)
- 2. Select a solution configuration (Debug or Release) and a solution platform (x64 or Win32 or ARM64)
+ 2. Select a solution configuration (Debug or Release) and the **Win32** solution platform
  3. Build Notepad++ solution like a normal Visual Studio project. This will also build the dependent Scintilla and Lexilla projects.
+
+### Building a Windows XP compatible binary
+
+The project is compiled with the current `v143` toolset but defines
+`_WIN32_WINNT=0x0501` / `NTDDI_VERSION=NTDDI_WINXPSP3` and links with subsystem version
+`5.01`. That is not enough on its own: since Visual Studio 2019 16.7 the MSVC static CRT and
+the STL use Windows Vista+ entry points (`FlsAlloc`, `EncodePointer`, SRW locks,
+`WaitOnAddress`, `GetFileInformationByHandleEx` used by `std::filesystem`, ...).
+
+YY-Thunks provides fallbacks for all of them, so no source change is needed for that part:
+
+ 1. Download and unzip [YY-Thunks-Objs](https://github.com/Chuyu-Team/YY-Thunks/releases)
+    (e.g. to `C:\YYThunks`).
+ 2. Build with the `NppYYThunksRoot` property pointing at that folder:
+
+    ```
+    msbuild notepadPlus.sln /m /p:configuration=Release /p:platform=Win32 /p:NppYYThunksRoot="C:\YYThunks\"
+    ```
+
+    Without the property the project still builds; only the CRT/STL thunks are then missing
+    and the resulting `notepad++.exe` will not start on Windows XP.
+
+ 3. Optionally verify the produced binary:
+
+    ```
+    python tools\checkXpBinary.py PowerEditor\bin\Notepad++.exe
+    ```
+
+    It reports the PE subsystem version, lists the imported DLLs and fails when
+    non-Windows-XP imports slipped in.
+
+### Windows XP source compatibility rules
+
+The Windows SDK hides every Vista+ declaration when `_WIN32_WINNT == 0x0501`, so any such
+API has to be reached through the helpers in
+[`PowerEditor/src/MISC/Common/NppWinXpCompat.h`](PowerEditor/src/MISC/Common/NppWinXpCompat.h)
+(dynamic `GetProcAddress` plus a down-level fallback) instead of being called directly.
+
+Higher level features that do not exist on XP are switched off at run time:
+
+* the Vista **Common Item Dialog** (`IFileDialog`) is replaced by the classic
+  `GetOpenFileName`/`GetSaveFileName` dialogs — see `LegacyFileDialog`;
+* **DirectWrite/Direct2D** rendering is disabled (they need Vista+);
+* **dark mode**, **TaskDialog**, **Application Restart** and **DWM** code paths are already
+  version gated and simply do not activate;
+* HMAC-SHA256 is computed with the bundled SHA-256 (`MISC/sha2`) instead of BCrypt.
+
+One more XP-specific limitation is worth calling out because it is easy to miss: Windows
+XP's `user32` cannot decode **PNG-compressed** icon entries — PNG-in-ico is a Vista+
+feature, and upstream ships PNG-only icons. On XP those go through the GDI+ decoder in
+[`NppGdiPlusIcon.h`](PowerEditor/src/MISC/Common/NppGdiPlusIcon.h) instead.
+
+### Bundling the languages (multilingual build)
+
+Notepad++ loads the UI translations from `bin/localization/*.xml` at runtime (the "localization"
+folder next to `notepad++.exe`). The MSBuild step does **not** copy them — `build.py` copies
+`PowerEditor/installer/nativeLang/*.xml` into `bin/localization/` automatically after a
+successful build (94 languages, including `chineseSimplified.xml`). If you ever build with
+MSBuild directly (bypassing `build.py`), run that copy step manually or the UI will only
+offer the built-in English fallback. These files are plain XML, so they do not affect XP
+compatibility of the executable itself.
+
+### Moving to a newer upstream release
+
+See [`XP_UPGRADE.md`](XP_UPGRADE.md) for the step-by-step procedure (merge, resolve the
+project-file conflicts, let the compiler list the new Vista+ APIs, verify with
+`checkXpBinary.py` in both configurations, then test on real hardware).
 
 ### Build `libScintilla.lib` and `libLexilla.lib`
 

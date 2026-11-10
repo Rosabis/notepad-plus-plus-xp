@@ -20,10 +20,16 @@
 #include "Common.h"
 #include <memory>
 
+class LegacyFileDialog;
+
 // Customizable file dialog.
 // It allows adding custom controls like checkbox to the dialog.
 // This class loosely follows the interface of the FileDialog class.
 // However, the implementation is different.
+//
+// It is based on IFileDialog (the "Common Item Dialog"), available from Windows Vista on.
+// On older systems -- the Windows XP edition of Notepad++ -- every call is forwarded to
+// LegacyFileDialog, which uses the classic GetOpenFileName/GetSaveFileName dialogs instead.
 class CustomFileDialog
 {
 public:
@@ -52,7 +58,11 @@ public:
 	bool getCheckboxState() const;
 	bool isReadOnly() const;
 
+	// True when the running system predates Windows Vista and the classic common dialogs are used.
+	bool useLegacyDialog() const { return _legacy != nullptr; }
+
 private:
 	class Impl;
 	std::unique_ptr<Impl> _impl;
+	std::unique_ptr<LegacyFileDialog> _legacy;
 };
