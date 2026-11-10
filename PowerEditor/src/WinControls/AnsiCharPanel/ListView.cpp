@@ -126,7 +126,7 @@ LRESULT ListViewBase::listViewNotifyCustomDraw(HWND hWnd, UINT uMsg, WPARAM wPar
 					static constexpr LONG paddingLeft = 1;
 					static constexpr LONG paddingRight = 2;
 
-					const auto lvii = LVITEMINDEX{ .iItem= static_cast<int>(lplvcd->nmcd.dwItemSpec), .iGroup = -1 };
+					const int iItem = static_cast<int>(lplvcd->nmcd.dwItemSpec);
 					RECT rcSubitem{
 						rcRow.left
 						, rcRow.top
@@ -137,10 +137,16 @@ LRESULT ListViewBase::listViewNotifyCustomDraw(HWND hWnd, UINT uMsg, WPARAM wPar
 
 					for (int i = 1; i < nCol; ++i)
 					{
-						ListView_GetItemIndexRect(hList, &lvii, i, LVIR_BOUNDS, &rcSubitem);
-						rcSubitem.left -= paddingLeft;
-						rcSubitem.right -= paddingRight;
-						::FillRect(lplvcd->nmcd.hdc, &rcSubitem, hBrush);
+						// ListView_GetItemIndexRect / LVITEMINDEX are Vista+; on XP use
+						// LVM_GETSUBITEMRECT (available since XP) to obtain the same subitem bounds.
+						rcSubitem.top = i;            // iSubItem
+						rcSubitem.left = LVIR_BOUNDS; // code
+						if (::SendMessageW(hList, LVM_GETSUBITEMRECT, static_cast<WPARAM>(iItem), reinterpret_cast<LPARAM>(&rcSubitem)))
+						{
+							rcSubitem.left -= paddingLeft;
+							rcSubitem.right -= paddingRight;
+							::FillRect(lplvcd->nmcd.hdc, &rcSubitem, hBrush);
+						}
 					}
 				}
 

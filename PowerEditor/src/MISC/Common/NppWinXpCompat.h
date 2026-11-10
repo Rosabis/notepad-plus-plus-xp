@@ -385,6 +385,30 @@ namespace NppXP
 		}
 
 		return 0;
+}
+
+
+	// user32!ChangeWindowMessageFilterEx -- Windows 7+
+	// XP has no UIPI (User Interface Privilege Isolation) and therefore no message
+	// filtering, so the call is a no-op there. Resolved through GetProcAddress so it
+	// never becomes a static import (user32 on XP does not export it, which would
+	// otherwise make the loader fail).
+	// MSGFLT_ALLOW / MSGFLT_DISALLOW are only declared by the SDK for Vista+. They are
+	// exposed as namespaced constants rather than macros so that they do not clobber
+	// the local MSGFLT_* const definitions elsewhere (notably winmain.cpp's
+	// "#ifndef MSGFLT_ALLOW" block, which also declares MSGFLT_DISALLOW).
+	constexpr DWORD msgfltAllow = 1;
+	constexpr DWORD msgfltDisallow = 2;
+
+	inline BOOL changeWindowMessageFilterEx(HWND hWnd, UINT message, DWORD action, LPVOID pChangeFilterStruct) noexcept
+	{
+		using FnChangeWindowMessageFilterEx = BOOL (WINAPI*)(HWND, UINT, DWORD, LPVOID);
+		static FARPROC proc = nullptr;
+		NppXP::detail::resolveOnce(proc, L"user32.dll", "ChangeWindowMessageFilterEx");
+		if (NppXP::detail::available(proc))
+			return reinterpret_cast<FnChangeWindowMessageFilterEx>(proc)(hWnd, message, action, pChangeFilterStruct);
+
+		return TRUE; // XP: no UIPI, the message passes through unconditionally
 	}
 
 

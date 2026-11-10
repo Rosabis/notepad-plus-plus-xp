@@ -41,6 +41,7 @@
 #include "dpiManagerV2.h"
 #include "resource.h"
 #include "verifySignedfile.h"
+#include "NppWinXpCompat.h" // XP runtime shims for Vista+ APIs (QueryFullProcessImageNameW, ChangeWindowMessageFilterEx, ...)
 
 typedef std::vector<std::wstring> ParamVector;
 
@@ -570,13 +571,16 @@ bool isParentProcessThisNotepadPlusPlusModule()
 	if (!found || parentPid == 0)
 		return false;
 
-	HANDLE hParent = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, parentPid);
+	// PROCESS_QUERY_LIMITED_INFORMATION (0x1000) is a Vista+ access flag that XP rejects;
+	// PROCESS_QUERY_INFORMATION | PROCESS_VM_READ is honoured on both XP and later and is
+	// what GetModuleFileNameExW (the XP fallback inside queryFullProcessImageNameW) needs.
+	HANDLE hParent = ::OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, parentPid);
 	if (hParent == nullptr)
 		return false; // parent gone or inaccessible
 
 	wchar_t parentPath[MAX_PATH] {};
 	DWORD parentPathLen = MAX_PATH;
-	bool gotPath = ::QueryFullProcessImageNameW(hParent, 0, parentPath, &parentPathLen) != 0;
+	bool gotPath = NppXP::queryFullProcessImageNameW(hParent, 0, parentPath, &parentPathLen) != 0;
 	if (!gotPath)
 	{
 		::CloseHandle(hParent);
@@ -585,7 +589,7 @@ bool isParentProcessThisNotepadPlusPlusModule()
 
 	wchar_t selfImagePath[MAX_PATH] = {};
 	DWORD dwSizeSelf = MAX_PATH;
-	if (!::QueryFullProcessImageNameW(::GetCurrentProcess(), 0, selfImagePath, &dwSizeSelf))
+	if (!NppXP::queryFullProcessImageNameW(::GetCurrentProcess(), 0, selfImagePath, &dwSizeSelf))
 	{
 		::CloseHandle(hParent);
 		return false;
@@ -908,7 +912,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE /*hPrevInstance
 
 				// HWND_MESSAGE: message-only window, never visible, no taskbar entry
 				HWND hIpcSender = CreateWindowExW(0, className, L"", 0, 0, 0, 0, 0,	HWND_MESSAGE, NULL, hInstance, NULL);
-				::ChangeWindowMessageFilterEx(hIpcSender, WM_COPYDATA, MSGFLT_ALLOW, nullptr);
+				NppXP::changeWindowMessageFilterEx(hIpcSender, WM_COPYDATA, NppXP::msgfltAllow, nullptr);
 
 				CmdLineParamsDTO dto = CmdLineParamsDTO::FromCmdLineParams(cmdLineParams);
 
